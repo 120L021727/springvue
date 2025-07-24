@@ -2,6 +2,8 @@ package com.example.mdtoword.controller;
 
 
 import com.example.mdtoword.service.ConverterService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 
 import org.springframework.http.HttpHeaders;
@@ -17,7 +19,7 @@ import org.springframework.web.bind.annotation.RestController;
 public class ConverterController {
     @Autowired
     private final ConverterService converterService;
-
+    private static final Logger logger = LoggerFactory.getLogger(ConverterController.class);
 
     public ConverterController(ConverterService converterService) {
         this.converterService = converterService;
@@ -28,6 +30,7 @@ public class ConverterController {
         try {
             // 校验输入
             if (markdownContent == null || markdownContent.trim().isEmpty()) {
+                logger.warn("收到空的 Markdown 输入");
                 return new ResponseEntity<>("Markdown content cannot be null or empty".getBytes(), HttpStatus.BAD_REQUEST);
             }
 
@@ -41,6 +44,7 @@ public class ConverterController {
 
             return new ResponseEntity<>(wordFile, headers, HttpStatus.OK);
         } catch (Exception e) {
+            logger.error("转换失败: {}", e.getMessage(), e);  // 添加日志输出
             return new ResponseEntity<>(("Conversion failed: " + e.getMessage()).getBytes(), HttpStatus.INTERNAL_SERVER_ERROR);
         }
     }

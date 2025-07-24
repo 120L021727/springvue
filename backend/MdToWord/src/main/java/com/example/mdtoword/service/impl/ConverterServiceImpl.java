@@ -1,41 +1,39 @@
 package com.example.mdtoword.service.impl;
 
 import com.example.mdtoword.service.ConverterService;
-import org.apache.poi.xwpf.usermodel.XWPFDocument;
-import org.commonmark.node.Node;
-import org.commonmark.parser.Parser;
-import org.commonmark.renderer.text.TextContentRenderer;
+import com.example.mdtoword.util.MarkdownToWordUtil;
 import org.springframework.stereotype.Service;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.io.ByteArrayOutputStream;
-
+import java.io.IOException;
 
 @Service
 public class ConverterServiceImpl implements ConverterService {
+    private static final Logger logger = LoggerFactory.getLogger(ConverterServiceImpl.class);
+
+    private final MarkdownToWordUtil markdownToWordUtil;
+
+    public ConverterServiceImpl(MarkdownToWordUtil markdownToWordUtil) {
+        this.markdownToWordUtil = markdownToWordUtil;
+    }
 
     @Override
     public byte[] convertMarkdownToWord(String markdownContent) {
-        Parser parser = Parser.builder().build();
-        Node document = parser.parse(markdownContent);
+        try {
+            logger.info("开始转换Markdown内容，长度: {}", markdownContent.length());
 
-        // 使用Apache POI生成Word文档
-        try (XWPFDocument wordDocument = new XWPFDocument();
-             ByteArrayOutputStream outputStream = new ByteArrayOutputStream()) {
+            // 直接使用Deepoove POI进行转换
+            byte[] wordBytes = markdownToWordUtil.convertMarkdownToWordBytes(markdownContent);
 
-            // 将Markdown内容渲染为纯文本
-            TextContentRenderer renderer = TextContentRenderer.builder().build();
-            String plainText = renderer.render(document);
+            logger.info("Markdown转换成功，生成字节数组长度: {}", wordBytes.length);
+            return wordBytes;
 
-            // 将纯文本写入Word文档
-            wordDocument.createParagraph().createRun().setText(plainText);
-
-            // 将Word文档写入字节数组
-            wordDocument.write(outputStream);
-            return outputStream.toByteArray();
-        }
-        catch (Exception e) {
-            e.printStackTrace();
-            // 处理异常，返回空字节数组或抛出自定义异常
+        } catch (IOException e) {
+            logger.error("转换过程中发生IO异常: {}", e.getMessage(), e);
+            throw new RuntimeException("转换失败: 模板文件读取错误", e);
+        } catch (Exception e) {
+            logger.error("转换过程中发生未知异常: {}", e.getMessage(), e);
             throw new RuntimeException("转换失败: " + e.getMessage(), e);
         }
     }

@@ -1,0 +1,12 @@
+spring:
+  application:
+    name: MdToWord
+
+logging:
+  level:
+    com.example.MdToWord: DEBUG
+    org.apache.poi: WARN
+    org.commonmark: WARN
+
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
