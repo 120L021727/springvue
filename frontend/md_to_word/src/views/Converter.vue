@@ -16,7 +16,7 @@
           <el-button type="primary" @click="convert" style="margin-top: 30px; width: 100%; font-size: 18px;">转换为 Word</el-button>
         </el-col>
         <el-col :span="12" style="display: flex; flex-direction: column; height: 500px;">
-          <el-divider>Word格式预览（可编辑、可复制）</el-divider>
+          <el-divider>Word格式预览</el-divider>
           <div
             class="preview-container"
             contenteditable="true"
