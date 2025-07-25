@@ -11,6 +11,7 @@ public class UserController {
     @Autowired
     private final UserService userService;
 
+//This is a constructor for the UserController class, which takes in a UserService object as a parameter
     public UserController(UserService userService) {
         this.userService = userService;
     }
