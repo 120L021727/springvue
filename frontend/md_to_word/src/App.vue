@@ -1,11 +1,21 @@
 <script setup>
-import Converter from './views/Converter.vue'
+// 移除直接导入组件，改用路由
 </script>
 
 <template>
-  <Converter />
+  <router-view />
 </template>
 
 <style scoped>
-/* 可根据需要添加样式 */
+/* 全局样式 */
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+html, body {
+  height: 100%;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', SimSun, sans-serif;
+}
 </style>

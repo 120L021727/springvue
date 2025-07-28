@@ -1,7 +1,10 @@
 <template>
   <div style="padding: 60px; max-width: 1600px; margin: 80px auto 0 auto;">
     <el-card shadow="hover">
-      <h2 style="text-align:center; margin-bottom: 30px; font-size: 2.2rem;">md转换word工具</h2>
+      <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 30px;">
+        <h2 style="font-size: 2.2rem; margin: 0;">md转换word工具</h2>
+        <el-button type="danger" @click="logout" size="small">退出登录</el-button>
+      </div>
       <el-row :gutter="30" style="align-items: stretch;">
         <el-col :span="12" style="display: flex; flex-direction: column; height: 500px;">
           <el-divider>md内容</el-divider>
@@ -43,12 +46,22 @@
 <script setup>
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
+import { useRouter } from 'vue-router'
 import axios from 'axios'
 import mammoth from 'mammoth'
+
+const router = useRouter()
 
 const markdown = ref('')
 const wordBlob = ref(null)
 const wordPreviewHtml = ref('')
+
+// 退出登录
+const logout = () => {
+  localStorage.removeItem('user')
+  ElMessage.success('已退出登录')
+  router.push('/login')
+}
 
 const convert = async () => {
   if (!markdown.value.trim()) {
