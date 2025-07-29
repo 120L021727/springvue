@@ -47,10 +47,12 @@
 import { ref } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useUserStore } from '@/stores/user'
+import service from '@/utils/request'
 import mammoth from 'mammoth'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 const markdown = ref('')
 const wordBlob = ref(null)
@@ -58,7 +60,7 @@ const wordPreviewHtml = ref('')
 
 // 退出登录
 const logout = () => {
-  localStorage.removeItem('user')
+  userStore.logout()
   ElMessage.success('已退出登录')
   router.push('/login')
 }
@@ -68,8 +70,9 @@ const convert = async () => {
     ElMessage.error('请输入 Markdown 内容')
     return
   }
+  
   try {
-    const res = await axios.post(
+    const res = await service.post(
       '/api/converter/markdown-to-word',
       markdown.value,
       {
@@ -79,14 +82,15 @@ const convert = async () => {
         }
       }
     )
+    
     wordBlob.value = res.data
     const arrayBuffer = await res.data.arrayBuffer()
     const result = await mammoth.convertToHtml({ arrayBuffer })
     wordPreviewHtml.value = result.value
     ElMessage.success('转换成功，请下载 Word 文件')
   } catch (e) {
-    ElMessage.error('转换失败')
-    console.error(e)
+    // 错误已在拦截器中处理
+    console.error('转换失败:', e)
   }
 }
 

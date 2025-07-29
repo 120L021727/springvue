@@ -68,14 +68,14 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { ElMessage } from 'element-plus'
-import { User, Lock } from '@element-plus/icons-vue'
 import { useRouter } from 'vue-router'
-import axios from 'axios'
+import { useUserStore } from '@/stores/user'
 
 const router = useRouter()
+const userStore = useUserStore()
 
 // 响应式数据
-const isLogin = ref(true) // true: 登录模式, false: 注册模式
+const isLogin = ref(true)
 const loading = ref(false)
 const loginFormRef = ref()
 
@@ -100,62 +100,27 @@ const rules = {
 // 切换登录/注册模式
 const toggleMode = () => {
   isLogin.value = !isLogin.value
-  // 清空表单
   loginFormRef.value?.resetFields()
 }
 
 // 处理登录
 const handleLogin = async () => {
-  try {
-    const response = await axios.post('/api/user/login', null, {
-      params: {
-        username: loginForm.username,
-        password: loginForm.password
-      }
-    })
-    
-    if (response.data.success) {
-      ElMessage.success('登录成功')
-      // 可以在这里保存用户信息到本地存储
-      localStorage.setItem('user', JSON.stringify(response.data.user))
-      // 跳转到转换器页面
-      router.push('/converter')
-    } else {
-      ElMessage.error(response.data.message || '登录失败')
-    }
-  } catch (error) {
-    console.error('登录错误:', error)
-    ElMessage.error('登录失败，请检查网络连接')
-  }
+  await userStore.login(loginForm.username, loginForm.password)
+  ElMessage.success('登录成功')
+  router.push('/converter')
 }
 
 // 处理注册
 const handleRegister = async () => {
-  try {
-    const response = await axios.post('/api/user/register', null, {
-      params: {
-        username: loginForm.username,
-        password: loginForm.password
-      }
-    })
-    
-    if (response.data.success) {
-      ElMessage.success('注册成功，请登录')
-      isLogin.value = true // 切换到登录模式
-    } else {
-      ElMessage.error(response.data.message || '注册失败')
-    }
-  } catch (error) {
-    console.error('注册错误:', error)
-    ElMessage.error('注册失败，请检查网络连接')
-  }
+  await userStore.register(loginForm.username, loginForm.password)
+  ElMessage.success('注册成功，请登录')
+  isLogin.value = true
 }
 
 // 提交处理
 const handleSubmit = async () => {
   if (!loginFormRef.value) return
   
-  // 表单验证
   const valid = await loginFormRef.value.validate().catch(() => false)
   if (!valid) return
   
@@ -167,6 +132,8 @@ const handleSubmit = async () => {
     } else {
       await handleRegister()
     }
+  } catch (error) {
+    ElMessage.error(error.message)
   } finally {
     loading.value = false
   }
