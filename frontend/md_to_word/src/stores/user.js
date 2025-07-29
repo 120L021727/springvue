@@ -69,4 +69,11 @@ export const useUserStore = defineStore('user', () => {
     checkAuth,
     logout
   }
+}, {
+  // 配置持久化
+  persist: {
+    key: 'user-store',
+    storage: sessionStorage, // 使用sessionStorage而不是localStorage
+    paths: ['user'] // 只持久化user字段
+  }
 })

@@ -52,7 +52,12 @@ service.interceptors.response.use(
         case 401:
         case 403:
           ElMessage.error('登录已过期，请重新登录')
-          // 清除认证状态并跳转登录
+          
+          // 清除Pinia状态（避免循环导入）
+          if (typeof window !== 'undefined') {
+            sessionStorage.removeItem('user-store')
+          }
+          
           router.push('/login')
           break
         case 404:
