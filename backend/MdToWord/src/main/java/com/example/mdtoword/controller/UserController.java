@@ -3,10 +3,17 @@ package com.example.mdtoword.controller;
 import com.example.mdtoword.pojo.User;
 import com.example.mdtoword.service.AuthService;
 import com.example.mdtoword.service.UserService;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpSession;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -14,7 +21,7 @@ import java.util.Map;
  * 用户控制器
  * 处理用户相关的HTTP请求
  */
-@CrossOrigin(origins = "http://localhost:5173")
+
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
@@ -63,7 +70,8 @@ public class UserController {
     @PostMapping("/login")
     public ResponseEntity<Map<String, Object>> login(
             @RequestParam String username, 
-            @RequestParam String password) {
+            @RequestParam String password,
+            HttpServletRequest request) {
         
         // 执行登录
         User user = authService.login(username, password);
@@ -71,10 +79,25 @@ public class UserController {
         Map<String, Object> response = new HashMap<>();
         
         if (user != null) {
+            // 手动设置Spring Security认证上下文
+            UsernamePasswordAuthenticationToken authToken = 
+                new UsernamePasswordAuthenticationToken(
+                    username, 
+                    null, 
+                    Collections.singletonList(new SimpleGrantedAuthority("ROLE_USER"))
+                );
+            
+            SecurityContextHolder.getContext().setAuthentication(authToken);
+            
+            // 将认证信息保存到会话中
+            HttpSession session = request.getSession(true);
+            session.setAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY, 
+                           SecurityContextHolder.getContext());
+            
             // 登录成功
             response.put("success", true);
             response.put("message", "登录成功");
-            response.put("user", user); // 返回用户信息（密码已被@JsonIgnore注解排除）
+            response.put("user", user);
             return ResponseEntity.ok(response);
         } else {
             // 登录失败
