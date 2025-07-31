@@ -1,5 +1,7 @@
 package com.example.mdtoword.config;
 
+import com.example.mdtoword.filter.JwtAuthenticationFilter;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -8,58 +10,58 @@ import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.config.annotation.web.configurers.AbstractHttpConfigurer;
 import org.springframework.security.config.http.SessionCreationPolicy;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
 import org.springframework.security.web.SecurityFilterChain;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.web.cors.CorsConfiguration;
+import org.springframework.web.cors.CorsConfigurationSource;
+import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 
-/**
- * Spring Security配置类
- * 用于配置安全相关的规则、认证方式、密码编码器等
- */
+import java.util.Arrays;
+
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    /**
-     * 密码编码器
-     * 使用BCrypt强哈希算法，自动处理盐值
-     */
-    @Bean
-    public BCryptPasswordEncoder passwordEncoder() {
-        return new BCryptPasswordEncoder();
-    }
-
-    /**
-     * 认证管理器
-     * 用于处理认证请求
-     */
+    
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
+    
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
         return authConfig.getAuthenticationManager();
     }
-
-    /**
-     * 安全过滤链配置
-     * 定义URL访问权限、登录逻辑、会话管理等
-     */
+    
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-                // 禁用CSRF保护，因为我们使用的是无状态API
-                .csrf(AbstractHttpConfigurer::disable)
-                // 配置请求授权规则
-                .authorizeHttpRequests(auth -> auth
-                        // 允许所有人访问注册和登录接口
-                        .requestMatchers("/api/user/register", "/api/user/login").permitAll()
-                        // 其他所有请求需要认证
-                        .anyRequest().authenticated()
-                )
-                // 移除 .formLogin() 配置
-                // 配置会话管理
-                .sessionManagement(session -> session
-                        // 使用无状态会话，每个请求都需要认证
-                        .sessionCreationPolicy(SessionCreationPolicy.IF_REQUIRED)
-                );
-
+            // 禁用CSRF，因为使用JWT
+            .csrf(AbstractHttpConfigurer::disable)
+            // 配置CORS
+            .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            // 配置请求授权
+            .authorizeHttpRequests(auth -> auth
+                .requestMatchers("/api/user/register", "/api/user/login").permitAll()
+                .anyRequest().authenticated()
+            )
+            // 配置会话管理为无状态
+            .sessionManagement(session -> session
+                .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            )
+            // 添加JWT过滤器
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+        
         return http.build();
+    }
+    
+    @Bean
+    public CorsConfigurationSource corsConfigurationSource() {
+        CorsConfiguration configuration = new CorsConfiguration();
+        configuration.setAllowedOriginPatterns(Arrays.asList("*"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedHeaders(Arrays.asList("*"));
+        configuration.setAllowCredentials(true);
+        
+        UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
+        source.registerCorsConfiguration("/**", configuration);
+        return source;
     }
 }

@@ -18,6 +18,7 @@
         :rules="rules"
         label-width="80px"
         size="large"
+        autocomplete="off"
       >
         <el-form-item label="用户名" prop="username">
           <el-input
@@ -25,6 +26,7 @@
             placeholder="请输入用户名"
             prefix-icon="User"
             clearable
+            autocomplete="new-username"
           />
         </el-form-item>
         
@@ -36,6 +38,7 @@
             prefix-icon="Lock"
             show-password
             clearable
+            autocomplete="new-password"
             @keyup.enter="handleSubmit"
           />
         </el-form-item>
@@ -107,7 +110,7 @@ const toggleMode = () => {
 const handleLogin = async () => {
   await userStore.login(loginForm.username, loginForm.password)
   ElMessage.success('登录成功')
-  router.push('/converter')
+  router.push('/home') // 修改为跳转到home页面
 }
 
 // 处理注册
@@ -133,7 +136,7 @@ const handleSubmit = async () => {
       await handleRegister()
     }
   } catch (error) {
-    ElMessage.error(error.message)
+    ElMessage.error(error.message || '操作失败')
   } finally {
     loading.value = false
   }
