@@ -56,11 +56,23 @@ service.interceptors.response.use(
     const { response } = error
     
     if (response) {
-      // 处理401/403错误 - JWT过期或无效
+      // 处理401/403错误 - 区分登录页面和其他页面
       if (response.status === 401 || response.status === 403) {
-        ElMessage.error('登录已过期，请重新登录')
-        sessionStorage.removeItem('jwt-token')
-        router.push('/login')
+        // 检查当前是否在登录页面
+        const currentPath = router.currentRoute.value.path
+        if (currentPath === '/login') {
+          // 在登录页面，显示具体的认证错误信息
+          if (response.data?.message) {
+            ElMessage.error(response.data.message)
+          } else {
+            ElMessage.error('用户名或密码错误')
+          }
+        } else {
+          // 在其他页面，显示登录过期信息
+          ElMessage.error('登录已过期，请重新登录')
+          sessionStorage.removeItem('jwt-token')
+          router.push('/login')
+        }
       } else if (response.status === 404) {
         ElMessage.error('请求的资源不存在')
       } else if (response.status === 500) {

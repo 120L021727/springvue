@@ -14,11 +14,11 @@ export const useUserStore = defineStore('user', () => {
       })
       
       if (response.data.success) {
-        // 保存用户信息
-        user.value = response.data.user
+        // 保存用户信息 - 修正访问路径
+        user.value = response.data.data.user
         
-        // 保存JWT令牌
-        sessionStorage.setItem('jwt-token', response.data.token)
+        // 保存JWT令牌 - 修正访问路径
+        sessionStorage.setItem('jwt-token', response.data.data.token)
         
         return true
       } else {
