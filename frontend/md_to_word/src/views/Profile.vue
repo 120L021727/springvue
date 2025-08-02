@@ -27,7 +27,7 @@
                   icon="UserFilled"
                 />
                 <div class="avatar-info">
-                  <h3>{{ userInfo.username }}</h3>
+                  <h3>{{ getDisplayName() }}</h3>
                   <p>用户ID: {{ userInfo.id }}</p>
                 </div>
               </div>
@@ -409,6 +409,14 @@ const loadUserInfo = async () => {
     }
     throw error
   }
+}
+
+/**
+ * 获取显示名称
+ * 优先显示昵称，如果昵称为空则显示用户名
+ */
+const getDisplayName = () => {
+  return userInfo.nickname || userInfo.username;
 }
 </script>
 

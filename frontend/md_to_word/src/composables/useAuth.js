@@ -35,12 +35,16 @@ export function useAuth() {
   }
 
   /**
-   * 获取用户名
-   * 如果用户已登录则返回用户名，否则返回默认值
-   * @returns {string} 用户名或默认值
+   * 获取用户显示名称
+   * 优先返回昵称，如果没有昵称则返回用户名，都没有则返回默认值
+   * @returns {string} 用户显示名称
    */
   const getUsername = () => {
-    return userStore.user?.username || '用户'
+    if (userStore.user) {
+      // 优先使用昵称，如果昵称为空或未设置则使用用户名
+      return userStore.user.nickname || userStore.user.username || '用户'
+    }
+    return '用户'
   }
 
   /**

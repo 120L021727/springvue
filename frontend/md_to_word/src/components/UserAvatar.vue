@@ -1,26 +1,18 @@
 <template>
-  <!-- 用户头像下拉菜单组件 -->
-  <el-dropdown trigger="click">
-    <!-- 头像和用户名显示区域 -->
+  <el-dropdown trigger="click" @command="handleLogout">
     <div class="avatar-container">
-      <div class="avatar">
-        <el-avatar 
-          :size="size || 50" 
-          :src="userStore.user?.avatar || ''" 
-          icon="UserFilled"
-        ></el-avatar>
-      </div>
-      <div class="username">{{ userStore.user?.username || '用户' }}</div>
+      <el-avatar 
+        :size="32" 
+        :src="userStore.user?.userPic || ''" 
+        icon="UserFilled"
+      />
+      <div class="username">{{ getDisplayName() }}</div>
     </div>
-    
-    <!-- 下拉菜单内容 -->
     <template #dropdown>
       <el-dropdown-menu>
-        <el-dropdown-item>
-          <span>用户信息</span>
-        </el-dropdown-item>
-        <el-dropdown-item divided @click="handleLogout">
-          <span style="color: #f56c6c">退出登录</span>
+        <el-dropdown-item command="logout">
+          <el-icon><SwitchButton /></el-icon>
+          <span>退出登录</span>
         </el-dropdown-item>
       </el-dropdown-menu>
     </template>
@@ -28,34 +20,29 @@
 </template>
 
 <script setup>
-/**
- * 用户头像组件
- * 显示用户头像、用户名和下拉菜单，支持登出功能
- */
-
 import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { SwitchButton } from '@element-plus/icons-vue'
 
-// 定义组件属性
-const props = defineProps({
-  /**
-   * 头像大小
-   * @type {number}
-   * @default 50
-   */
-  size: {
-    type: Number,
-    default: 50
-  }
-})
-
-const router = useRouter()
 const userStore = useUserStore()
+const router = useRouter()
 
 /**
- * 处理用户登出
- * 清除用户状态并跳转到登录页
+ * 获取用户显示名称
+ * 优先返回昵称，如果没有昵称则返回用户名
+ * @returns {string} 用户显示名称
+ */
+const getDisplayName = () => {
+  if (userStore.user) {
+    return userStore.user.nickname || userStore.user.username || '用户'
+  }
+  return '用户'
+}
+
+/**
+ * 处理退出登录
+ * 清除用户状态并跳转到登录页面
  */
 const handleLogout = () => {
   userStore.logout()
