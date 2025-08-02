@@ -100,7 +100,7 @@
       width="400px"
       class="password-dialog"
     >
-      <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef">
+      <el-form :model="passwordForm" :rules="passwordRules" ref="passwordFormRef" label-width="80px">
         <el-form-item label="当前密码" prop="currentPassword">
           <el-input
             v-model="passwordForm.currentPassword"
@@ -225,7 +225,13 @@ const saveBasicInfo = async () => {
 
 /**
  * 修改密码
- * 调用后端API修改密码，成功后提示重新登录
+ * 调用后端API修改密码，成功后直接跳转登录页面
+ * 
+ * 设计说明：
+ * 1. 密码修改成功后，旧的JWT token立即失效
+ * 2. 为了安全考虑，用户必须使用新密码重新登录
+ * 3. 避免用户困惑，不提供"稍后登录"选项
+ * 4. 确保所有需要认证的操作都失效，直到重新登录
  */
 const changePassword = async () => {
   try {
@@ -266,17 +272,11 @@ const changePassword = async () => {
       
       // 7. 检查是否需要重新登录
       if (result.data.needRelogin) {
-        // 显示确认对话框
-        ElMessageBox.confirm(
-          '密码修改成功，需要重新登录以使用新密码。是否立即重新登录？',
-          '重新登录提示',
-          {
-            confirmButtonText: '重新登录',
-            cancelButtonText: '稍后登录',
-            type: 'warning'
-          }
-        ).then(() => {
-          // 用户选择立即重新登录
+        // 显示提示信息
+        ElMessage.info('密码修改成功，即将跳转到登录页面')
+        
+        // 延迟一秒后跳转，让用户看到提示信息
+        setTimeout(() => {
           // 清除本地存储的token和用户信息
           sessionStorage.removeItem('jwt-token')
           userStore.logout()
@@ -285,10 +285,7 @@ const changePassword = async () => {
           router.push('/login')
           
           ElMessage.success('请使用新密码重新登录')
-        }).catch(() => {
-          // 用户选择稍后登录
-          ElMessage.info('您可以稍后重新登录')
-        })
+        }, 1000)
       }
     } else {
       // 密码修改失败
