@@ -2,19 +2,22 @@ package com.example.mdtoword.pojo;
 
 import com.baomidou.mybatisplus.annotation.*;
 import com.fasterxml.jackson.annotation.JsonIgnore;
-import jakarta.validation.constraints.Email;
-import jakarta.validation.constraints.NotEmpty;
-import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.Pattern;
 import lombok.Data;
 
 import java.time.LocalDateTime;
 
+/**
+ * 用户实体类
+ * 用于存储用户基本信息和认证数据
+ * 
+ * @author 坤坤
+ * @since 2024-01-01
+ */
 @Data
 @TableName("tb_user") // 指定表名
 public class User {
+    
     @TableId(value = "id", type = IdType.AUTO) // 指定主键及生成策略
-    @NotNull
     private Integer id; // 主键ID
     
     private String username; // 用户名
@@ -22,11 +25,8 @@ public class User {
     @JsonIgnore
     private String password; // 密码
     
-    @NotEmpty
-    @Pattern(regexp = "^\\S{1,10}$")
     private String nickname; // 昵称
 
-    @Email
     private String email; // 邮箱
     
     @TableField("user_pic")

@@ -10,10 +10,16 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * 用户控制器
- * 处理用户注册、获取当前用户信息、退出登录等功能
+ * 处理用户注册、获取当前用户信息、修改密码等功能
  * 登录功能由Spring Security表单登录处理
+ * 
+ * @author 坤坤
+ * @since 2024-01-01
  */
 @RestController
 @RequestMapping("/api/user")
@@ -24,6 +30,10 @@ public class UserController {
     
     /**
      * 用户注册
+     * 
+     * @param username 用户名
+     * @param password 密码
+     * @return 注册结果
      */
     @PostMapping("/register")
     public ResponseEntity<Result<String>> register(
@@ -44,6 +54,8 @@ public class UserController {
     
     /**
      * 获取当前用户信息
+     * 
+     * @return 当前用户信息
      */
     @GetMapping("/current")
     public ResponseEntity<Result<User>> getCurrentUser() {
@@ -64,7 +76,60 @@ public class UserController {
     }
     
     /**
+     * 修改用户密码
+     * 修改成功后需要重新登录
+     * 
+     * @param currentPassword 当前密码
+     * @param newPassword 新密码
+     * @return 修改结果
+     */
+    @PostMapping("/change-password")
+    public ResponseEntity<Result<Map<String, Object>>> changePassword(
+            @RequestParam String currentPassword,
+            @RequestParam String newPassword) {
+        
+        // 参数验证
+        if (currentPassword == null || currentPassword.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(Result.error("当前密码不能为空"));
+        }
+        
+        if (newPassword == null || newPassword.trim().isEmpty()) {
+            return ResponseEntity.badRequest()
+                .body(Result.error("新密码不能为空"));
+        }
+        
+        if (newPassword.length() < 6) {
+            return ResponseEntity.badRequest()
+                .body(Result.error("新密码长度不能少于6位"));
+        }
+        
+        // 检查新密码是否与当前密码相同
+        if (currentPassword.equals(newPassword)) {
+            return ResponseEntity.badRequest()
+                .body(Result.error("新密码不能与当前密码相同"));
+        }
+        
+        // 调用服务层修改密码
+        boolean success = userService.changePassword(currentPassword, newPassword);
+        
+        if (success) {
+            // 构建返回信息，提示用户需要重新登录
+            Map<String, Object> result = new HashMap<>();
+            result.put("message", "密码修改成功，请重新登录");
+            result.put("needRelogin", true);
+            
+            return ResponseEntity.ok(Result.success(result));
+        } else {
+            return ResponseEntity.badRequest()
+                .body(Result.error("密码修改失败，请检查当前密码是否正确"));
+        }
+    }
+    
+    /**
      * 用户退出登录
+     * 
+     * @return 退出结果
      */
     @PostMapping("/logout")
     public ResponseEntity<Result<String>> logout() {

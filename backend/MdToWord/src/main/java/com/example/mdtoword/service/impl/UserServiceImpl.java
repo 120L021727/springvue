@@ -13,6 +13,9 @@ import org.springframework.stereotype.Service;
 /**
  * 用户服务实现类
  * 处理用户相关的业务逻辑
+ * 
+ * @author 坤坤
+ * @since 2024-01-01
  */
 @Service
 public class UserServiceImpl implements UserService {
@@ -25,6 +28,7 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 根据用户名查找用户
+     * 
      * @param username 用户名
      * @return 用户对象，如果不存在返回null
      */
@@ -38,6 +42,7 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 注册新用户
+     * 
      * @param username 用户名
      * @param password 密码（明文）
      */
@@ -57,6 +62,7 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 更新用户信息
+     * 
      * @param user 用户对象
      */
     @Override
@@ -72,6 +78,7 @@ public class UserServiceImpl implements UserService {
 
     /**
      * 更新用户头像
+     * 
      * @param avatarUrl 头像URL
      */
     @Override
@@ -91,23 +98,46 @@ public class UserServiceImpl implements UserService {
     }
 
     /**
-     * 更新用户密码
-     * @param newPwd 新密码（明文）
+     * 修改用户密码
+     * 验证当前密码，更新为新密码
+     * 
+     * @param currentPassword 当前密码
+     * @param newPassword 新密码
+     * @return 修改结果，true-成功，false-失败
      */
     @Override
-    public void updatePwd(String newPwd) {
+    public boolean changePassword(String currentPassword, String newPassword) {
         // 从SecurityContextHolder获取当前登录用户
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            
-            // 获取用户并更新密码
-            User user = findByUserName(username);
-            if (user != null) {
-                // 加密新密码
-                user.setPassword(passwordEncoder.encode(newPwd));
-                userMapper.updateById(user);
-            }
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return false;
         }
+        
+        String username = authentication.getName();
+        User user = findByUserName(username);
+        
+        if (user == null) {
+            return false;
+        }
+        
+        // 验证当前密码是否正确
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            return false;
+        }
+        
+        // 检查新密码是否与当前密码相同
+        if (passwordEncoder.matches(newPassword, user.getPassword())) {
+            return false; // 新密码与当前密码相同，返回失败
+        }
+        
+        // 创建新的User对象进行更新，不设置updateTime，让MyBatis Plus自动填充
+        User updateUser = new User();
+        updateUser.setId(user.getId());
+        updateUser.setPassword(passwordEncoder.encode(newPassword));
+        // 不手动设置updateTime，让MyBatis Plus的自动填充机制工作
+        
+        userMapper.updateById(updateUser);
+        
+        return true;
     }
 }

@@ -64,14 +64,6 @@
                   修改密码
                 </el-button>
               </div>
-              
-              <div class="security-item">
-                <div class="security-info">
-                  <h4>账户状态</h4>
-                  <p>当前状态：正常</p>
-                </div>
-                <el-tag type="success">正常</el-tag>
-              </div>
             </div>
           </div>
           
@@ -93,10 +85,6 @@
                 <div class="stat-item">
                   <div class="stat-number">{{ stats.createdAt }}</div>
                   <div class="stat-label">注册时间</div>
-                </div>
-                <div class="stat-item">
-                  <div class="stat-number">{{ stats.status }}</div>
-                  <div class="stat-label">账户状态</div>
                 </div>
               </div>
             </div>
@@ -150,14 +138,19 @@
 /**
  * 个人信息页面组件
  * 展示和管理用户个人信息、安全设置等
+ * 
+ * @author 坤坤
+ * @since 2024-01-01
  */
 
 import { ref, reactive, onMounted } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import TopNavbar from '@/components/TopNavbar.vue'
+import { useRouter } from 'vue-router'
 
 const userStore = useUserStore()
+const router = useRouter()
 
 // 用户信息
 const userInfo = reactive({
@@ -172,8 +165,7 @@ const userInfo = reactive({
 const stats = reactive({
   loginCount: 156,
   lastLogin: '2024-01-15 14:30',
-  createdAt: '2023-06-01',
-  status: '正常'
+  createdAt: '2023-06-01'
 })
 
 // 修改密码相关
@@ -185,13 +177,24 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
+// 密码验证规则
 const passwordRules = {
   currentPassword: [
     { required: true, message: '请输入当前密码', trigger: 'blur' }
   ],
   newPassword: [
     { required: true, message: '请输入新密码', trigger: 'blur' },
-    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' }
+    { min: 6, message: '密码长度不能少于6位', trigger: 'blur' },
+    {
+      validator: (rule, value, callback) => {
+        if (value === passwordForm.currentPassword) {
+          callback(new Error('新密码不能与当前密码相同'))
+        } else {
+          callback()
+        }
+      },
+      trigger: 'blur'
+    }
   ],
   confirmPassword: [
     { required: true, message: '请确认新密码', trigger: 'blur' },
@@ -208,7 +211,9 @@ const passwordRules = {
   ]
 }
 
-// 保存基本信息
+/**
+ * 保存基本信息
+ */
 const saveBasicInfo = async () => {
   try {
     // 这里调用API保存用户信息
@@ -218,21 +223,92 @@ const saveBasicInfo = async () => {
   }
 }
 
-// 修改密码
+/**
+ * 修改密码
+ * 调用后端API修改密码，成功后提示重新登录
+ */
 const changePassword = async () => {
   try {
+    // 1. 表单验证
     await passwordFormRef.value.validate()
-    // 这里调用API修改密码
-    ElMessage.success('密码修改成功')
-    showChangePassword.value = false
-    // 清空表单
-    Object.assign(passwordForm, {
-      currentPassword: '',
-      newPassword: '',
-      confirmPassword: ''
+    
+    // 2. 构建请求参数
+    const params = new URLSearchParams({
+      currentPassword: passwordForm.currentPassword,
+      newPassword: passwordForm.newPassword
     })
+    
+    // 3. 调用后端API修改密码
+    const response = await fetch('/api/user/change-password', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+        'Authorization': `Bearer ${sessionStorage.getItem('jwt-token')}`
+      },
+      body: params
+    })
+    
+    const result = await response.json()
+    
+    if (result.code === 200) {
+      // 4. 密码修改成功
+      ElMessage.success(result.data.message || '密码修改成功')
+      
+      // 5. 关闭对话框
+      showChangePassword.value = false
+      
+      // 6. 清空表单
+      Object.assign(passwordForm, {
+        currentPassword: '',
+        newPassword: '',
+        confirmPassword: ''
+      })
+      
+      // 7. 检查是否需要重新登录
+      if (result.data.needRelogin) {
+        // 显示确认对话框
+        ElMessageBox.confirm(
+          '密码修改成功，需要重新登录以使用新密码。是否立即重新登录？',
+          '重新登录提示',
+          {
+            confirmButtonText: '重新登录',
+            cancelButtonText: '稍后登录',
+            type: 'warning'
+          }
+        ).then(() => {
+          // 用户选择立即重新登录
+          // 清除本地存储的token和用户信息
+          sessionStorage.removeItem('jwt-token')
+          userStore.logout()
+          
+          // 跳转到登录页面
+          router.push('/login')
+          
+          ElMessage.success('请使用新密码重新登录')
+        }).catch(() => {
+          // 用户选择稍后登录
+          ElMessage.info('您可以稍后重新登录')
+        })
+      }
+    } else {
+      // 密码修改失败
+      ElMessage.error(result.message || '密码修改失败')
+    }
   } catch (error) {
-    ElMessage.error('密码修改失败，请重试')
+    console.error('修改密码异常:', error)
+    
+    if (error.name === 'ValidationError') {
+      // 表单验证失败
+      ElMessage.error('请检查输入信息是否正确')
+    } else if (error.response?.status === 401) {
+      // 未授权，可能是token过期
+      ElMessage.error('登录已过期，请重新登录')
+      userStore.logout()
+      router.push('/login')
+    } else {
+      // 其他错误
+      ElMessage.error('修改失败，请稍后重试')
+    }
   }
 }
 
@@ -402,7 +478,7 @@ onMounted(async () => {
 
 .stats-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 20px;
 }
 
