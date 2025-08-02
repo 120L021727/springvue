@@ -15,6 +15,7 @@
           text-color="rgba(255, 255, 255, 0.9)"
           active-text-color="#ffffff"
           class="nav-menu"
+          :collapse="false"
           @select="handleMenuSelect"
         >
           <el-menu-item index="home">
@@ -160,7 +161,7 @@ const handleMenuSelect = (index) => {
       }
       break
     case 'about':
-      ElMessage.info('关于页面正在开发中，敬请期待！')
+      router.push('/about')
       break
   }
 }
@@ -182,7 +183,8 @@ const handleUserCommand = (command) => {
       break
     case 'profile':
       if (isLoggedIn()) {
-        ElMessage.info('个人信息功能开发中...')
+        // 个人信息功能暂未实现
+        ElMessage.info('个人信息功能暂未开放')
       }
       break
   }
@@ -226,6 +228,9 @@ const handleUserCommand = (command) => {
 .nav-menu {
   border: none;
   background: transparent;
+  display: flex;
+  justify-content: center;
+  width: 100%;
 }
 
 .nav-menu :deep(.el-menu-item) {
@@ -235,6 +240,9 @@ const handleUserCommand = (command) => {
   color: #333;
   font-weight: 500;
   transition: all 0.3s ease;
+  margin: 0 10px;
+  display: flex;
+  align-items: center;
 }
 
 .nav-menu :deep(.el-menu-item:hover) {
@@ -246,6 +254,14 @@ const handleUserCommand = (command) => {
   background-color: rgba(25, 118, 210, 0.15);
   color: #1976d2;
   border-bottom: 2px solid #1976d2;
+}
+
+.nav-menu :deep(.el-menu-item .el-icon) {
+  margin-right: 5px;
+}
+
+.nav-menu :deep(.el-menu-item span) {
+  display: inline-block;
 }
 
 .search-section {

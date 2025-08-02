@@ -43,13 +43,13 @@ a,
  */
 .page-background {
   position: relative;
-  width: 100vw;
-  height: 100vh;
-  overflow: hidden;
+  width: 100%;
+  min-height: 100vh;
+  /* 移除 overflow: hidden，允许页面滚动 */
 }
 
 .page-background .background-image {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -60,7 +60,7 @@ a,
 }
 
 .page-background .background-overlay {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;

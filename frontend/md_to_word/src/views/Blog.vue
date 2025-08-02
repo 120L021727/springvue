@@ -1,7 +1,11 @@
 <template>
-  <div class="blog-page">
+  <div class="page-background">
     <!-- 顶部导航栏 -->
     <TopNavbar />
+    
+    <!-- 背景 -->
+    <div class="background-image"></div>
+    <div class="background-overlay"></div>
     
     <!-- 主要内容区域 -->
     <div class="main-content">
@@ -11,7 +15,7 @@
         
         <div class="blog-grid">
           <el-card 
-            class="blog-card" 
+            class="blog-card glass-effect" 
             shadow="hover"
             v-for="blog in blogs"
             :key="blog.id"
@@ -128,34 +132,40 @@ const handleCurrentChange = (val) => {
 </script>
 
 <style scoped>
-.blog-page {
-  min-height: 100vh;
-  background: #f8f9fa;
-}
+/**
+ * 博客页面特定样式
+ * 使用main.css中的公共样式类，只保留特定样式
+ */
 
+/**
+ * 主要内容区域样式
+ */
 .main-content {
-  padding-top: 60px; /* 为顶部导航栏留出空间 */
+  padding-top: 80px; /* 为顶部导航栏留出空间 */
   padding-bottom: 40px;
+  position: relative;
+  z-index: 1;
 }
 
 .blog-container {
   max-width: 1200px;
   margin: 0 auto;
-  padding: 40px 20px;
+  padding: 0 20px;
 }
 
 .page-title {
   text-align: center;
   font-size: 2.5rem;
-  font-weight: 600;
+  font-weight: 700;
   margin-bottom: 10px;
-  color: #333;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
 }
 
 .page-subtitle {
   text-align: center;
-  color: #666;
-  font-size: 1.1rem;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
   margin-bottom: 40px;
 }
 
@@ -170,15 +180,16 @@ const handleCurrentChange = (val) => {
   border-radius: 15px;
   overflow: hidden;
   transition: all 0.3s ease;
-  background: white;
+  /* 移除白色背景，使用透明效果 */
 }
 
 .blog-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
 }
 
 .blog-image {
+  width: 100%;
   height: 200px;
   overflow: hidden;
 }
@@ -201,32 +212,45 @@ const handleCurrentChange = (val) => {
 .blog-meta {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
-  font-size: 12px;
-  color: #999;
+  align-items: center;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
+}
+
+.blog-date {
+  color: rgba(255, 255, 255, 0.8);
+  background: rgba(255, 255, 255, 0.1);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .blog-category {
-  background: #e3f2fd;
-  color: #1976d2;
-  padding: 2px 8px;
-  border-radius: 10px;
+  color: #4CAF50;
+  background: rgba(76, 175, 80, 0.1);
+  padding: 4px 8px;
+  border-radius: 12px;
+  font-size: 0.8rem;
   font-weight: 500;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(76, 175, 80, 0.2);
 }
 
 .blog-title {
-  font-size: 1.2rem;
+  font-size: 1.3rem;
   font-weight: 600;
   margin-bottom: 10px;
-  color: #333;
+  color: white;
   line-height: 1.4;
+  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .blog-excerpt {
-  color: #666;
-  font-size: 14px;
+  color: rgba(255, 255, 255, 0.8);
   line-height: 1.6;
-  margin-bottom: 15px;
+  margin-bottom: 20px;
   display: -webkit-box;
   -webkit-line-clamp: 3;
   -webkit-box-orient: vertical;
@@ -244,18 +268,53 @@ const handleCurrentChange = (val) => {
   margin-top: 40px;
 }
 
-/* Element Plus 组件样式覆盖 */
-:deep(.el-card) {
-  border: none;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+/* 分页组件样式调整 */
+:deep(.el-pagination) {
+  background: rgba(255, 255, 255, 0.1);
+  padding: 20px;
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
-:deep(.el-card__body) {
-  padding: 0;
+:deep(.el-pagination .el-pager li) {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:deep(.el-pagination .el-pager li.is-active) {
+  background: rgba(76, 175, 80, 0.3);
+  color: white;
+  border: 1px solid rgba(76, 175, 80, 0.5);
+}
+
+:deep(.el-pagination .btn-prev),
+:deep(.el-pagination .btn-next) {
+  background: transparent;
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:deep(.el-pagination .el-pagination__total),
+:deep(.el-pagination .el-pagination__sizes) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:deep(.el-pagination .el-select .el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.8);
+}
+
+:deep(.el-pagination .el-select .el-input__inner) {
+  color: rgba(255, 255, 255, 0.8);
 }
 
 /* 响应式设计 */
 @media (max-width: 768px) {
+  .blog-container {
+    padding: 0 15px;
+  }
+  
   .page-title {
     font-size: 2rem;
   }
@@ -269,8 +328,8 @@ const handleCurrentChange = (val) => {
     gap: 20px;
   }
   
-  .blog-container {
-    padding: 20px;
+  .blog-card {
+    margin: 0 10px;
   }
 }
 </style> 
