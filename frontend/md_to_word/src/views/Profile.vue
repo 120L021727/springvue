@@ -32,14 +32,14 @@
                 </div>
               </div>
               
-              <el-form :model="userInfo" label-width="80px" class="profile-form">
+              <el-form :model="userInfo" :rules="basicInfoRules" ref="basicInfoFormRef" label-width="80px" class="profile-form">
                 <el-form-item label="用户名">
                   <el-input v-model="userInfo.username" disabled />
                 </el-form-item>
-                <el-form-item label="邮箱">
+                <el-form-item label="邮箱" prop="email">
                   <el-input v-model="userInfo.email" placeholder="请输入邮箱" />
                 </el-form-item>
-                <el-form-item label="昵称">
+                <el-form-item label="昵称" prop="nickname">
                   <el-input v-model="userInfo.nickname" placeholder="请输入昵称" />
                 </el-form-item>
                 <el-form-item>
@@ -177,6 +177,25 @@ const passwordForm = reactive({
   confirmPassword: ''
 })
 
+// 基本信息表单引用
+const basicInfoFormRef = ref()
+
+// 基本信息验证规则
+const basicInfoRules = {
+  email: [
+    { required: true, message: '请输入邮箱地址', trigger: 'blur' },
+    { 
+      pattern: /^[^\s@]+@[^\s@]+\.[^\s@]+$/, 
+      message: '请输入正确的邮箱格式', 
+      trigger: 'blur' 
+    }
+  ],
+  nickname: [
+    { required: true, message: '请输入昵称', trigger: 'blur' },
+    { min: 1, max: 20, message: '昵称长度在1-20个字符之间', trigger: 'blur' }
+  ]
+}
+
 // 密码验证规则
 const passwordRules = {
   currentPassword: [
@@ -213,13 +232,47 @@ const passwordRules = {
 
 /**
  * 保存基本信息
+ * 调用后端API保存用户的邮箱和昵称信息
  */
 const saveBasicInfo = async () => {
   try {
-    // 这里调用API保存用户信息
-    ElMessage.success('基本信息保存成功')
+    // 1. 表单验证
+    await basicInfoFormRef.value.validate()
+    
+    // 2. 调用后端API保存用户信息
+    const response = await fetch('/api/user/info', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${sessionStorage.getItem('jwt-token')}`
+      },
+      body: JSON.stringify({
+        nickname: userInfo.nickname,
+        email: userInfo.email
+      })
+    })
+    
+    const result = await response.json()
+    
+    if (result.code === 200) {
+      ElMessage.success('基本信息保存成功')
+    } else {
+      ElMessage.error(result.message || '保存失败')
+    }
   } catch (error) {
-    ElMessage.error('保存失败，请重试')
+    console.error('保存基本信息异常:', error)
+    
+    if (error.name === 'ValidationError') {
+      // 表单验证失败
+      ElMessage.error('请检查输入信息是否正确')
+    } else if (error.response?.status === 401) {
+      // 未授权，可能是token过期
+      ElMessage.error('登录已过期，请重新登录')
+      userStore.logout()
+      router.push('/login')
+    } else {
+      ElMessage.error('保存失败，请稍后重试')
+    }
   }
 }
 
@@ -312,13 +365,51 @@ const changePassword = async () => {
 // 页面加载时获取用户信息
 onMounted(async () => {
   try {
-    // 这里可以调用API获取用户详细信息
-    // const userData = await userStore.getUserInfo()
-    // Object.assign(userInfo, userData)
+    // 获取用户详细信息
+    await loadUserInfo()
   } catch (error) {
+    console.error('获取用户信息失败:', error)
     ElMessage.error('获取用户信息失败')
   }
 })
+
+/**
+ * 加载用户详细信息
+ * 从后端API获取当前登录用户的详细信息
+ */
+const loadUserInfo = async () => {
+  try {
+    const response = await fetch('/api/user/current', {
+      method: 'GET',
+      headers: {
+        'Authorization': `Bearer ${sessionStorage.getItem('jwt-token')}`
+      }
+    })
+    
+    const result = await response.json()
+    
+    if (result.code === 200) {
+      // 更新用户信息
+      Object.assign(userInfo, {
+        id: result.data.id,
+        username: result.data.username,
+        email: result.data.email || '',
+        nickname: result.data.nickname || '',
+        avatar: result.data.userPic || ''
+      })
+    } else {
+      throw new Error(result.message || '获取用户信息失败')
+    }
+  } catch (error) {
+    console.error('加载用户信息异常:', error)
+    if (error.message.includes('未登录') || error.message.includes('认证')) {
+      // 用户未登录或token过期
+      userStore.logout()
+      router.push('/login')
+    }
+    throw error
+  }
+}
 </script>
 
 <style scoped>

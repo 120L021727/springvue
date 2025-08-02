@@ -67,12 +67,11 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void update(User user) {
-        // 更新用户信息，不更新密码
-        User dbUser = findByUserName(user.getUsername());
-        if (dbUser != null) {
-            user.setId(dbUser.getId());
-            user.setPassword(dbUser.getPassword()); // 保持原密码不变
+        // 直接更新用户信息，传入的user对象应该已经包含了正确的ID
+        if (user.getId() != null) {
             userMapper.updateById(user);
+        } else {
+            throw new IllegalArgumentException("用户ID不能为空");
         }
     }
 

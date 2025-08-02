@@ -8,8 +8,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
+import jakarta.validation.Valid;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -23,6 +25,7 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/user")
+@Validated
 public class UserController {
     
     @Autowired
@@ -72,6 +75,45 @@ public class UserController {
         } else {
             return ResponseEntity.status(401)
                 .body(Result.unauthorized("未登录"));
+        }
+    }
+    
+    /**
+     * 更新用户基本信息
+     * 
+     * @param user 用户信息（包含昵称、邮箱等）
+     * @return 更新结果
+     */
+    @PutMapping("/info")
+    public ResponseEntity<Result<String>> updateUserInfo(@Validated(User.UpdateInfoGroup.class) @RequestBody User user) {
+        // 从SecurityContext获取当前登录用户
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return ResponseEntity.status(401)
+                .body(Result.unauthorized("用户未登录"));
+        }
+        
+        String username = authentication.getName();
+        User currentUser = userService.findByUserName(username);
+        
+        if (currentUser == null) {
+            return ResponseEntity.badRequest()
+                .body(Result.error("用户不存在"));
+        }
+        
+        // 设置用户ID，确保更新的是当前用户
+        user.setId(currentUser.getId());
+        user.setUsername(currentUser.getUsername()); // 保持用户名不变
+        user.setPassword(currentUser.getPassword()); // 保持密码不变
+        
+        try {
+            // 调用服务层更新用户信息
+            userService.update(user);
+            return ResponseEntity.ok(Result.success("信息更新成功"));
+        } catch (Exception e) {
+            return ResponseEntity.badRequest()
+                .body(Result.error("信息更新失败：" + e.getMessage()));
         }
     }
     
