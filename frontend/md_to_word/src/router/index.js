@@ -12,10 +12,11 @@ import Tools from '@/views/Tools.vue'
 import Blog from '@/views/Blog.vue'
 import About from '@/views/About.vue'
 import Converter from '@/views/Converter.vue'
+import Profile from '@/views/Profile.vue'
 
 /**
  * 路由配置数组
- * 定义所有页面的路由规则
+ * 定义应用的所有路由规则
  */
 const routes = [
   { path: '/', name: 'Home', component: Home },                                    // 首页
@@ -23,6 +24,7 @@ const routes = [
   { path: '/tools', name: 'Tools', component: Tools, meta: { requiresAuth: true } }, // 工具页（需要认证）
   { path: '/blog', name: 'Blog', component: Blog, meta: { requiresAuth: true } }, // 博客页（需要认证）
   { path: '/about', name: 'About', component: About },                            // 关于页
+  { path: '/profile', name: 'Profile', component: Profile, meta: { requiresAuth: true } }, // 个人信息页（需要认证）
   { path: '/converter', name: 'Converter', component: Converter, meta: { requiresAuth: true } } // 转换工具页（需要认证）
 ]
 

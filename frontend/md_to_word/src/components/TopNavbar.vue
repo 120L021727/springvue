@@ -183,8 +183,7 @@ const handleUserCommand = (command) => {
       break
     case 'profile':
       if (isLoggedIn()) {
-        // 个人信息功能暂未实现
-        ElMessage.info('个人信息功能暂未开放')
+        router.push('/profile')
       }
       break
   }
