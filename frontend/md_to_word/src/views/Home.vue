@@ -1,222 +1,262 @@
 <template>
-  <div class="home-container">
-    <!-- 用户头像菜单 -->
-    <div class="user-profile">
-      <el-dropdown trigger="click">
-        <div class="avatar-container">
-          <div class="avatar">
-            <!-- 如果有头像就显示头像，否则显示默认头像 -->
-            <el-avatar 
-              :size="50" 
-              :src="userStore.user?.avatar || ''" 
-              icon="UserFilled"
-            ></el-avatar>
-          </div>
-          <div class="username">{{ userStore.user?.username || '用户' }}</div>
-        </div>
-        <template #dropdown>
-          <el-dropdown-menu>
-            <el-dropdown-item>
-              <span>用户信息</span>
-            </el-dropdown-item>
-            <el-dropdown-item divided @click="logout">
-              <span style="color: #f56c6c">退出登录</span>
-            </el-dropdown-item>
-          </el-dropdown-menu>
-        </template>
-      </el-dropdown>
-    </div>
-
-    <!-- 品牌标签 -->
-    <div class="brand-tag">
-      坤坤的小工具
-    </div>
+  <div class="page-background">
+    <!-- 顶部导航栏 -->
+    <TopNavbar />
     
-    <!-- 工具卡片区域 -->
-    <div class="tools-container">
-      <h1 class="welcome-title">欢迎使用坤坤的小工具箱</h1>
-      <div class="tools-grid">
-        <el-card 
-          class="tool-card" 
-          shadow="hover"
-          @click="router.push('/converter')"
-        >
-          <div class="tool-icon">
-            <el-icon :size="40"><Document /></el-icon>
+    <!-- 背景 -->
+    <div class="background-image"></div>
+    <div class="background-overlay"></div>
+    
+    <!-- 主要内容区域 -->
+    <div class="main-content">
+      <!-- 英雄区域 -->
+      <section class="hero-section">
+        <div class="hero-content">
+          <h1 class="hero-title">欢迎来到坤坤的网站</h1>
+          <p class="hero-subtitle">一个集工具、博客、学习于一体的综合平台</p>
+          <div class="hero-actions">
+            <el-button type="primary" size="large" @click="goToTools">
+              <el-icon><Tools /></el-icon>
+              开始使用工具
+            </el-button>
+            <el-button size="large" @click="goToBlog">
+              <el-icon><Document /></el-icon>
+              浏览博客
+            </el-button>
           </div>
-          <h2 class="tool-title">Markdown转Word</h2>
-          <p class="tool-desc">轻松将Markdown格式转换为Word文档</p>
-        </el-card>
-        
-        <!-- 可以在这里添加更多工具卡片 -->
-      </div>
+        </div>
+      </section>
+
+      <!-- 特色功能区域 -->
+      <section class="features-section">
+        <div class="responsive-container">
+          <h2 class="section-title">平台特色</h2>
+          <div class="responsive-grid">
+            <div class="feature-card glass-effect">
+              <div class="feature-icon">
+                <el-icon size="40"><Tools /></el-icon>
+              </div>
+              <h3>实用工具</h3>
+              <p>提供各种实用的在线工具，包括文档转换、格式处理等，让工作更高效。</p>
+            </div>
+            <div class="feature-card glass-effect">
+              <div class="feature-icon">
+                <el-icon size="40"><Document /></el-icon>
+              </div>
+              <h3>技术博客</h3>
+              <p>分享技术心得、学习笔记和项目经验，与大家一起成长进步。</p>
+            </div>
+            <div class="feature-card glass-effect">
+              <div class="feature-icon">
+                <el-icon size="40"><User /></el-icon>
+              </div>
+              <h3>用户友好</h3>
+              <p>简洁美观的界面设计，流畅的用户体验，让使用变得更加简单。</p>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      <!-- 最新动态区域 -->
+      <section class="news-section">
+        <div class="responsive-container">
+          <h2 class="section-title">最新动态</h2>
+          <div class="responsive-grid">
+            <div class="news-card glass-effect">
+              <div class="news-date">2024-01-15</div>
+              <h3>Markdown转Word工具上线</h3>
+              <p>全新的文档转换工具，支持Markdown格式转换为Word文档，保持格式完整。</p>
+            </div>
+            <div class="news-card glass-effect">
+              <div class="news-date">2024-01-10</div>
+              <h3>网站全新改版</h3>
+              <p>采用现代化的设计风格，提供更好的用户体验和更丰富的功能。</p>
+            </div>
+            <div class="news-card glass-effect">
+              <div class="news-date">2024-01-05</div>
+              <h3>博客系统升级</h3>
+              <p>博客系统进行全面升级，支持更多格式和更好的阅读体验。</p>
+            </div>
+          </div>
+        </div>
+      </section>
     </div>
   </div>
 </template>
 
 <script setup>
-import { useUserStore } from '@/stores/user'
+/**
+ * 首页组件
+ * 展示网站欢迎信息、特色功能和最新动态
+ */
+
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
-import { Document } from '@element-plus/icons-vue'
+import { Tools, Document, User } from '@element-plus/icons-vue'
+import TopNavbar from '@/components/TopNavbar.vue'
 
 const router = useRouter()
-const userStore = useUserStore()
 
-const logout = () => {
-  userStore.logout()
-  ElMessage.success('已退出登录')
-  router.push('/login')
+/**
+ * 跳转到工具页面
+ * 导航到需要登录的工具页面
+ */
+const goToTools = () => {
+  router.push('/tools')
+}
+
+/**
+ * 跳转到博客页面
+ * 导航到需要登录的博客页面
+ */
+const goToBlog = () => {
+  const token = sessionStorage.getItem('jwt-token')
+  if (!token) {
+    ElMessage.info('请先登录后再访问博客页面')
+    router.push('/login')
+  } else {
+    router.push('/blog')
+  }
 }
 </script>
 
 <style scoped>
-.home-container {
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  /* 使用与登录页相同的背景 */
-  background: url('/background.png') center center/cover no-repeat;
-  background-attachment: fixed;
-  position: relative;
-  padding: 80px 20px 40px;
-}
+/**
+ * 首页特定样式
+ * 使用main.css中的公共样式类，只保留特定样式
+ */
 
-/* 背景遮罩层 */
-.home-container::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3); /* 30%透明度的黑色遮罩 */
+/**
+ * 主要内容区域样式
+ */
+.main-content {
+  padding-top: 60px; /* 为顶部导航栏留出空间 */
+  position: relative;
   z-index: 1;
 }
 
-/* 用户头像区域 */
-.user-profile {
-  position: absolute;
-  top: 20px;
-  right: 30px;
-  z-index: 3;
-}
-
-.avatar-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  cursor: pointer;
-}
-
-.avatar {
-  border: 2px solid rgba(255, 255, 255, 0.8);
-  border-radius: 50%;
-  overflow: hidden;
-}
-
-.username {
-  color: white;
-  font-weight: 500;
-  margin-top: 8px;
-  font-size: 14px;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.5);
-}
-
-/* 右上角品牌标签 */
-.brand-tag {
-  position: absolute;
-  top: 20px;
-  left: 30px;
-  background: rgba(255, 255, 255, 0.95);
-  color: #1976d2;
-  padding: 8px 16px;
-  border-radius: 15px;
-  font-size: 14px;
-  font-weight: 500;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(25, 118, 210, 0.2);
-  z-index: 2;
-}
-
-/* 工具容器 */
-.tools-container {
-  position: relative;
-  z-index: 2;
-  width: 100%;
-  max-width: 1200px;
-  margin-top: 60px;
-}
-
-.welcome-title {
+/* 英雄区域 */
+.hero-section {
+  padding: 60px 20px;
   text-align: center;
   color: white;
-  font-size: 2.5rem;
+}
+
+.hero-content {
+  max-width: 800px;
+  margin: 0 auto;
+}
+
+.hero-title {
+  font-size: 3rem;
+  font-weight: 700;
+  margin-bottom: 20px;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.hero-subtitle {
+  font-size: 1.2rem;
   margin-bottom: 40px;
-  text-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
+  opacity: 0.9;
+  line-height: 1.6;
 }
 
-.tools-grid {
+.hero-actions {
   display: flex;
+  gap: 20px;
+  justify-content: center;
   flex-wrap: wrap;
-  gap: 30px;
-  justify-content: center;
 }
 
-.tool-card {
-  width: 280px;
-  height: 200px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  padding: 30px;
-  cursor: pointer;
-  transition: all 0.3s ease;
+.hero-actions .el-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 25px;
+}
+
+/* 特色功能区域 */
+.features-section {
+  padding: 40px 20px;
+  margin: 20px 20px;
+}
+
+.section-title {
   text-align: center;
-  background: rgba(255, 255, 255, 0.9) !important;
+  font-size: 2.2rem;
+  font-weight: 600;
+  margin-bottom: 40px;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.feature-card {
+  text-align: center;
+  padding: 30px 20px;
   border-radius: 15px;
+  transition: all 0.3s ease;
+  color: white;
 }
 
-.tool-card:hover {
+.feature-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.2) !important;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
 }
 
-.tool-icon {
-  color: #1976d2;
+.feature-icon {
   margin-bottom: 15px;
+  color: #ffffff;
 }
 
-.tool-title {
-  font-size: 1.4rem;
-  margin: 10px 0;
-  color: #333;
+.feature-card h3 {
+  font-size: 1.3rem;
+  font-weight: 600;
+  margin-bottom: 12px;
+  color: white;
 }
 
-.tool-desc {
-  color: #666;
+.feature-card p {
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
   font-size: 14px;
 }
 
-/* Element Plus 组件样式覆盖 */
-:deep(.el-dropdown-menu) {
-  min-width: 120px;
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.15);
+/* 最新动态区域 */
+.news-section {
+  padding: 40px 20px;
+  margin: 20px 20px;
 }
 
-:deep(.el-card) {
-  overflow: hidden;
+.news-card {
+  padding: 25px;
   border-radius: 15px;
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
-  border: none;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
+  color: white;
 }
 
-:deep(.el-card__body) {
-  padding: 0;
-  height: 100%;
+.news-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.2);
+}
+
+.news-date {
+  color: #ffffff;
+  font-size: 13px;
+  font-weight: 500;
+  margin-bottom: 8px;
+  opacity: 0.8;
+}
+
+.news-card h3 {
+  font-size: 1.1rem;
+  font-weight: 600;
+  margin-bottom: 8px;
+  color: white;
+}
+
+.news-card p {
+  color: rgba(255, 255, 255, 0.9);
+  line-height: 1.5;
+  font-size: 14px;
 }
 </style>

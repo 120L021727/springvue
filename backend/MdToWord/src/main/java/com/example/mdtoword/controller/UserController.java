@@ -4,31 +4,23 @@ import com.example.mdtoword.exception.BusinessException;
 import com.example.mdtoword.pojo.Result;
 import com.example.mdtoword.pojo.User;
 import com.example.mdtoword.service.UserService;
-import com.example.mdtoword.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
-import java.util.HashMap;
-import java.util.Map;
-
+/**
+ * 用户控制器
+ * 处理用户注册、获取当前用户信息、退出登录等功能
+ * 登录功能由Spring Security表单登录处理
+ */
 @RestController
 @RequestMapping("/api/user")
 public class UserController {
     
     @Autowired
     private UserService userService;
-    
-    @Autowired
-    private AuthenticationManager authenticationManager;
-    
-    @Autowired
-    private JwtUtil jwtUtil;
     
     /**
      * 用户注册
@@ -48,34 +40,6 @@ public class UserController {
         userService.register(username, password);
         
         return ResponseEntity.ok(Result.success("注册成功"));
-    }
-    
-    /**
-     * 用户登录 - JWT版本
-     */
-    @PostMapping("/login")
-    public ResponseEntity<Result<Map<String, Object>>> login(
-            @RequestParam String username, 
-            @RequestParam String password) {
-        
-        // 移除 try-catch，让异常自然抛出给 GlobalExceptionHandler 处理
-        // 使用Spring Security进行认证
-        Authentication authentication = authenticationManager.authenticate(
-            new UsernamePasswordAuthenticationToken(username, password)
-        );
-        
-        // 生成JWT Token
-        String token = jwtUtil.generateToken(username);
-        
-        // 获取用户信息
-        User user = userService.findByUserName(username);
-        
-        // 构建返回数据
-        Map<String, Object> loginData = new HashMap<>();
-        loginData.put("token", token);
-        loginData.put("user", user);
-        
-        return ResponseEntity.ok(Result.success(loginData, "登录成功"));
     }
     
     /**

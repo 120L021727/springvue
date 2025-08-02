@@ -1,64 +1,73 @@
+/**
+ * 路由配置模块
+ * 定义应用的路由规则和导航守卫
+ */
+
 import { createRouter, createWebHistory } from 'vue-router'
 import { useUserStore } from '@/stores/user'
+import { ElMessage } from 'element-plus'
 import Login from '@/views/Login.vue'
 import Home from '@/views/Home.vue'
+import Tools from '@/views/Tools.vue'
+import Blog from '@/views/Blog.vue'
 import Converter from '@/views/Converter.vue'
 
+/**
+ * 路由配置数组
+ * 定义所有页面的路由规则
+ */
 const routes = [
-  {
-    path: '/',
-    redirect: '/login'
-  },
-  {
-    path: '/login',
-    name: 'Login',
-    component: Login
-  },
-  {
-    path: '/home',
-    name: 'Home',
-    component: Home,
-    meta: { requiresAuth: true }
-  },
-  {
-    path: '/converter',
-    name: 'Converter',
-    component: Converter,
-    meta: { requiresAuth: true }
-  }
+  { path: '/', name: 'Home', component: Home },                                    // 首页
+  { path: '/login', name: 'Login', component: Login },                            // 登录页
+  { path: '/tools', name: 'Tools', component: Tools, meta: { requiresAuth: true } }, // 工具页（需要认证）
+  { path: '/blog', name: 'Blog', component: Blog, meta: { requiresAuth: true } }, // 博客页（需要认证）
+  { path: '/converter', name: 'Converter', component: Converter, meta: { requiresAuth: true } } // 转换工具页（需要认证）
 ]
 
+// 创建路由实例
 const router = createRouter({
-  history: createWebHistory(),
+  history: createWebHistory(), // 使用HTML5 History模式
   routes
 })
 
+/**
+ * 全局前置守卫
+ * 在路由跳转前进行权限检查和用户状态验证
+ */
 router.beforeEach(async (to, from, next) => {
-  // 如果需要认证
+  // 检查目标路由是否需要认证
   if (to.meta.requiresAuth) {
-    // 检查JWT令牌是否存在
     const token = sessionStorage.getItem('jwt-token')
+    
+    // 如果没有token，保存目标路径并跳转到登录页
     if (!token) {
-      // 没有令牌，重定向到登录页
+      sessionStorage.setItem('redirectAfterLogin', to.fullPath)
+      ElMessage.info('请先登录后再访问此页面')
       next('/login')
       return
     }
-    
-    // 有令牌，验证是否有效
+
+    // 有token，验证token有效性
     const userStore = useUserStore()
     const isValid = await userStore.checkAuth()
-    
+
     if (isValid) {
-      next() // 继续访问
+      // token有效，允许访问
+      next()
     } else {
-      next('/login') // 令牌无效，重定向到登录页
+      // token无效，清除token并跳转到登录页
+      sessionStorage.removeItem('jwt-token')
+      sessionStorage.setItem('redirectAfterLogin', to.fullPath)
+      ElMessage.warning('登录已过期，请重新登录')
+      next('/login')
     }
   } else {
-    // 不需要认证的页面
-    // 如果已登录且访问登录页，重定向到首页
+    // 不需要认证的路由
     if (to.path === '/login' && sessionStorage.getItem('jwt-token')) {
-      next('/home') // 修改为跳转到home页面
+      // 已登录用户访问登录页，重定向到首页
+      next('/')
     } else {
+      // 正常访问
       next()
     }
   }
