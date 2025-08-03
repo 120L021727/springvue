@@ -7,6 +7,19 @@ spring:
     url: jdbc:mysql://localhost:3306/springvue_db?serverTimezone=Asia/Shanghai&useUnicode=true&characterEncoding=utf-8&useSSL=false
     username: root
     password: 123456
+  
+  # 文件上传配置
+  servlet:
+    multipart:
+      max-file-size: 100MB
+      max-request-size: 100MB
+      enabled: true
+
+# 自定义文件上传配置
+file:
+  upload:
+    path: ./uploads/avatars/  # 头像文件存储路径
+    max-size: 104857600  # 最大文件大小（100MB）
 
 # MyBatis-Plus配置
 mybatis-plus:
@@ -20,9 +33,6 @@ mybatis-plus:
 
 logging:
   level:
-    com.example.MdToWord: DEBUG
-    org.apache.poi: WARN
-    org.commonmark: WARN
-
+    com.example.mdtoword: debug
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"

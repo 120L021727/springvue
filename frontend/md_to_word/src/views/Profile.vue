@@ -21,11 +21,27 @@
             </div>
             <div class="card-content">
               <div class="avatar-section">
-                <el-avatar 
-                  :size="80" 
-                  :src="userInfo.avatar || ''" 
-                  icon="UserFilled"
-                />
+                <div class="avatar-container">
+                  <el-avatar 
+                    :size="80" 
+                    :src="userInfo.avatar || ''" 
+                    icon="UserFilled"
+                  />
+                  <div class="avatar-upload-overlay">
+                    <el-upload
+                      ref="avatarUploadRef"
+                      :action="uploadAction"
+                      :headers="uploadHeaders"
+                      :show-file-list="false"
+                      :before-upload="beforeAvatarUpload"
+                      :on-success="handleAvatarSuccess"
+                      :on-error="handleAvatarError"
+                      class="avatar-uploader"
+                    >
+                      <el-icon class="upload-icon"><Upload /></el-icon>
+                    </el-upload>
+                  </div>
+                </div>
                 <div class="avatar-info">
                   <h3>{{ getDisplayName() }}</h3>
                   <p>用户ID: {{ userInfo.id }}</p>
@@ -143,14 +159,26 @@
  * @since 2024-01-01
  */
 
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useUserStore } from '@/stores/user'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import TopNavbar from '@/components/TopNavbar.vue'
 import { useRouter } from 'vue-router'
+import { Upload } from '@element-plus/icons-vue'
 
 const userStore = useUserStore()
 const router = useRouter()
+
+/**
+ * 处理头像URL，确保是完整的URL
+ * @param {string} avatarUrl 头像URL
+ * @returns {string} 完整的头像URL
+ */
+const getFullAvatarUrl = (avatarUrl) => {
+  if (!avatarUrl) return ''
+  if (avatarUrl.startsWith('http')) return avatarUrl
+  return `http://localhost:8080${avatarUrl}`
+}
 
 // 用户信息
 const userInfo = reactive({
@@ -179,6 +207,13 @@ const passwordForm = reactive({
 
 // 基本信息表单引用
 const basicInfoFormRef = ref()
+
+// 头像上传相关
+const avatarUploadRef = ref()
+const uploadAction = 'http://localhost:8080/api/file/upload-avatar'
+const uploadHeaders = computed(() => ({
+  'Authorization': `Bearer ${sessionStorage.getItem('jwt-token')}`
+}))
 
 // 基本信息验证规则
 const basicInfoRules = {
@@ -389,13 +424,16 @@ const loadUserInfo = async () => {
     const result = await response.json()
     
     if (result.code === 200) {
+      // 使用工具函数处理头像URL
+      const avatarUrl = getFullAvatarUrl(result.data.userPic)
+      
       // 更新用户信息
       Object.assign(userInfo, {
         id: result.data.id,
         username: result.data.username,
         email: result.data.email || '',
         nickname: result.data.nickname || '',
-        avatar: result.data.userPic || ''
+        avatar: avatarUrl
       })
     } else {
       throw new Error(result.message || '获取用户信息失败')
@@ -417,6 +455,57 @@ const loadUserInfo = async () => {
  */
 const getDisplayName = () => {
   return userInfo.nickname || userInfo.username;
+}
+
+/**
+ * 头像上传前的验证
+ * @param {File} file 上传的文件
+ * @returns {boolean} 是否允许上传
+ */
+const beforeAvatarUpload = (file) => {
+  // 检查文件大小（100MB）
+  const isLt100M = file.size / 1024 / 1024 < 100
+  if (!isLt100M) {
+    ElMessage.error('头像文件大小不能超过 100MB！')
+    return false
+  }
+
+  return true
+}
+
+/**
+ * 头像上传成功处理
+ * @param {Object} response 服务器响应
+ */
+const handleAvatarSuccess = (response) => {
+  if (response.code === 200) {
+    // 使用工具函数处理头像URL
+    const fullAvatarUrl = getFullAvatarUrl(response.data)
+    
+    // 更新用户信息中的头像（显示用完整URL）
+    userInfo.avatar = fullAvatarUrl
+    
+    // 更新store中的用户信息（存储相对路径）
+    if (userStore.user) {
+      userStore.user = {
+        ...userStore.user,
+        userPic: response.data  // 存储相对路径
+      }
+    }
+    
+    ElMessage.success('头像上传成功')
+  } else {
+    ElMessage.error(response.message || '头像上传失败')
+  }
+}
+
+/**
+ * 头像上传失败处理
+ * @param {Error} error 错误信息
+ */
+const handleAvatarError = (error) => {
+  console.error('头像上传失败:', error)
+  ElMessage.error('头像上传失败，请重试')
 }
 </script>
 
@@ -501,6 +590,57 @@ const getDisplayName = () => {
   border-radius: 10px;
   backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.2);
+}
+
+.avatar-container {
+  position: relative;
+  margin-right: 20px;
+  display: inline-block;
+}
+
+.avatar-upload-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  background: rgba(0, 0, 0, 0.6);
+  border-radius: 50%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  cursor: pointer;
+}
+
+.avatar-container:hover .avatar-upload-overlay {
+  opacity: 1;
+}
+
+.avatar-uploader {
+  width: 100%;
+  height: 100%;
+}
+
+.avatar-uploader :deep(.el-upload) {
+  width: 100%;
+  height: 100%;
+  border: none;
+}
+
+.avatar-uploader :deep(.el-upload-list) {
+  display: none;
+}
+
+.upload-icon {
+  font-size: 24px;
+  color: white;
+  transition: transform 0.3s ease;
+}
+
+.avatar-upload-overlay:hover .upload-icon {
+  transform: scale(1.1);
 }
 
 .avatar-info {

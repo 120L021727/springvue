@@ -63,6 +63,8 @@ public class SecurityConfig {
                 .requestMatchers("/api/user/register").permitAll()
                 // 健康检查接口允许匿名访问
                 .requestMatchers("/api/converter/health").permitAll()
+                // 允许头像文件匿名访问（用于显示头像）
+                .requestMatchers("/api/file/avatar/**").permitAll()
                 // 其他所有请求都需要认证
                 .anyRequest().authenticated()
             )

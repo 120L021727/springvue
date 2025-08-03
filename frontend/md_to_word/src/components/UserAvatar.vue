@@ -3,7 +3,7 @@
     <div class="avatar-container">
       <el-avatar 
         :size="32" 
-        :src="userStore.user?.userPic || ''" 
+        :src="avatarUrl" 
         icon="UserFilled"
       />
       <div class="username">{{ getDisplayName() }}</div>
@@ -24,9 +24,20 @@ import { useUserStore } from '@/stores/user'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { SwitchButton } from '@element-plus/icons-vue'
+import { computed } from 'vue'
 
 const userStore = useUserStore()
 const router = useRouter()
+
+/**
+ * 计算头像URL，确保是完整的URL
+ */
+const avatarUrl = computed(() => {
+  const userPic = userStore.user?.userPic
+  if (!userPic) return ''
+  if (userPic.startsWith('http')) return userPic
+  return `http://localhost:8080${userPic}`
+})
 
 /**
  * 获取用户显示名称

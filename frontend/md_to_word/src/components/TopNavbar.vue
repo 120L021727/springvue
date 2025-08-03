@@ -58,7 +58,7 @@
           <div class="user-info">
             <el-avatar 
               :size="32" 
-              :src="userStore.user?.avatar || ''" 
+              :src="avatarUrl" 
               icon="UserFilled"
             />
             <span class="username">{{ getUsername() }}</span>
@@ -127,6 +127,16 @@ const { autoInitUser, isLoggedIn, getUsername } = useAuth()
 autoInitUser()
 
 const searchKeyword = ref('')
+
+/**
+ * 计算头像URL，确保是完整的URL
+ */
+const avatarUrl = computed(() => {
+  const userPic = userStore.user?.userPic
+  if (!userPic) return ''
+  if (userPic.startsWith('http')) return userPic
+  return `http://localhost:8080${userPic}`
+})
 
 // 根据当前路由确定激活的菜单项
 const activeIndex = computed(() => {
