@@ -142,7 +142,7 @@ const avatarUrl = computed(() => {
 const activeIndex = computed(() => {
   const path = route.path
   if (path === '/') return 'home'
-  if (path === '/tools') return 'tools'
+  if (path === '/tools' || path === '/converter') return 'tools'
   if (path === '/blog') return 'blog'
   if (path === '/about') return 'about'
   return 'home'
