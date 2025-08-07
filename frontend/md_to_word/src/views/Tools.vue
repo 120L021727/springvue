@@ -1,7 +1,11 @@
 <template>
-  <div class="tools-page">
+  <div class="page-background">
     <!-- 顶部导航栏 -->
     <TopNavbar />
+    
+    <!-- 背景 -->
+    <div class="background-image"></div>
+    <div class="background-overlay"></div>
     
     <!-- 主要内容区域 -->
     <div class="main-content">
@@ -78,30 +82,12 @@ autoInitUser()
 </script>
 
 <style scoped>
-.tools-page {
-  min-height: 100vh;
-  background: url('/background.png') center center/cover no-repeat;
-  background-attachment: fixed;
-  position: relative;
-}
+/**
+ * 工具页面特定样式
+ * 使用main.css中的公共样式类，只保留特定样式
+ */
 
-.tools-page::before {
-  content: '';
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background: rgba(0, 0, 0, 0.3);
-  z-index: 1;
-}
 
-.main-content {
-  position: relative;
-  z-index: 2;
-  padding-top: 60px; /* 为顶部导航栏留出空间 */
-  padding-bottom: 40px;
-}
 
 .tools-container {
   width: 100%;

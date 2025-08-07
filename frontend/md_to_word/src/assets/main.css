@@ -6,6 +6,14 @@
 @import './base.css';
 
 /**
+ * CSS变量定义
+ * 用于控制导航栏样式
+ */
+:root {
+  --has-background: false; /* 默认无背景图片 */
+}
+
+/**
  * 应用根容器样式
  * 确保应用占满整个视口
  */
@@ -46,6 +54,26 @@ a,
   width: 100%;
   min-height: 100vh;
   /* 移除 overflow: hidden，允许页面滚动 */
+}
+
+/* 有背景图片的页面设置导航栏变量 */
+.page-background {
+  --has-background: true;
+  --navbar-bg: transparent;
+  --navbar-border: 1px solid rgba(255, 255, 255, 0.1);
+  --menu-text-color: rgba(255, 255, 255, 0.9);
+  --menu-hover-bg: rgba(0, 0, 0, 0.3);
+  --menu-hover-color: #ffffff;
+  --menu-active-bg: rgba(0, 0, 0, 0.4);
+  --menu-active-color: #ffffff;
+  --menu-active-border: 2px solid #ffffff;
+  --search-bg: rgba(0, 0, 0, 0.3);
+  --search-border: rgba(255, 255, 255, 0.2);
+  --search-text: rgba(255, 255, 255, 0.9);
+  --search-placeholder: rgba(255, 255, 255, 0.6);
+  --search-prefix: rgba(255, 255, 255, 0.8);
+  --user-text: rgba(255, 255, 255, 0.9);
+  --user-hover-bg: rgba(0, 0, 0, 0.3);
 }
 
 .page-background .background-image {
@@ -101,6 +129,37 @@ a,
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
   gap: 30px;
+}
+
+/**
+ * 主要内容区域样式
+ * 所有页面通用的主内容区域样式
+ */
+.main-content {
+  position: relative;
+  z-index: 2;
+  padding-top: 80px; /* 为透明导航栏留出空间 */
+  padding-bottom: 40px;
+}
+
+/**
+ * 页面标题样式
+ * 所有页面通用的标题样式
+ */
+.page-title {
+  text-align: center;
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 10px;
+  color: white;
+  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+}
+
+.page-subtitle {
+  text-align: center;
+  font-size: 1.2rem;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 40px;
 }
 
 /**

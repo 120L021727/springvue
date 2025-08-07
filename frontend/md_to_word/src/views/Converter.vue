@@ -133,9 +133,7 @@ const clearAll = () => {
   background: #f8f9fa;
 }
 
-.main-content {
-  padding-top: 60px; /* 为顶部导航栏留出空间 */
-}
+
 
 .input-container, .preview-container {
   flex: 1;

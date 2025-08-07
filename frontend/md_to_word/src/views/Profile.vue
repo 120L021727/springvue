@@ -515,15 +515,7 @@ const handleAvatarError = (error) => {
  * 使用main.css中的公共样式类，只保留特定样式
  */
 
-/**
- * 主要内容区域样式
- */
-.main-content {
-  padding-top: 80px; /* 为顶部导航栏留出空间 */
-  padding-bottom: 40px;
-  position: relative;
-  z-index: 1;
-}
+
 
 .profile-container {
   max-width: 1200px;
@@ -531,21 +523,7 @@ const handleAvatarError = (error) => {
   padding: 0 20px;
 }
 
-.page-title {
-  text-align: center;
-  font-size: 2.5rem;
-  font-weight: 700;
-  margin-bottom: 10px;
-  color: white;
-  text-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
-}
 
-.page-subtitle {
-  text-align: center;
-  font-size: 1.2rem;
-  color: rgba(255, 255, 255, 0.8);
-  margin-bottom: 40px;
-}
 
 .profile-grid {
   display: grid;

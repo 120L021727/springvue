@@ -126,14 +126,7 @@ const goToBlog = () => {
  * 使用main.css中的公共样式类，只保留特定样式
  */
 
-/**
- * 主要内容区域样式
- */
-.main-content {
-  padding-top: 60px; /* 为顶部导航栏留出空间 */
-  position: relative;
-  z-index: 1;
-}
+
 
 /* 英雄区域 */
 .hero-section {

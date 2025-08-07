@@ -94,15 +94,7 @@ import TopNavbar from '@/components/TopNavbar.vue'
  * 使用main.css中的公共样式类，只保留特定样式
  */
 
-/**
- * 主要内容区域样式
- */
-.main-content {
-  padding-top: 80px; /* 为顶部导航栏留出空间 */
-  position: relative;
-  z-index: 1;
-  padding-bottom: 40px; /* 底部留出空间 */
-}
+
 
 .about-content {
   padding: 40px;

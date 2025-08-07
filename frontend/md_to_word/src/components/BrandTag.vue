@@ -57,4 +57,11 @@ const props = defineProps({
   white-space: nowrap;                    /* 防止文字换行 */
   display: inline-block;                  /* 行内块级元素 */
 }
+
+/* 在透明导航栏下的品牌标签样式 */
+.top-navbar.transparent .brand-tag {
+  background: rgba(255, 255, 255, 0.95);
+  color: #1976d2;
+  border: 1px solid rgba(25, 118, 210, 0.2);
+}
 </style> 

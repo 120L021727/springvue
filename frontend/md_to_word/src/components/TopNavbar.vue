@@ -148,6 +148,8 @@ const activeIndex = computed(() => {
   return 'home'
 })
 
+
+
 // 处理菜单选择
 const handleMenuSelect = (index) => {
   switch (index) {
@@ -207,11 +209,11 @@ const handleUserCommand = (command) => {
   left: 0;
   right: 0;
   height: 60px;
-  background: rgba(255, 255, 255, 0.15);
-  backdrop-filter: blur(20px);
-  border-bottom: 1px solid rgba(255, 255, 255, 0.2);
+  background: var(--navbar-bg, rgba(255, 255, 255, 0.95));
+  backdrop-filter: blur(15px);
+  border-bottom: var(--navbar-border, 1px solid rgba(0, 0, 0, 0.1));
   z-index: 1000;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .navbar-container {
@@ -246,7 +248,7 @@ const handleUserCommand = (command) => {
   height: 60px;
   line-height: 60px;
   border-bottom: none;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--menu-text-color, #333);
   font-weight: 600;
   transition: all 0.3s ease;
   margin: 0 10px;
@@ -255,14 +257,14 @@ const handleUserCommand = (command) => {
 }
 
 .nav-menu :deep(.el-menu-item:hover) {
-  background-color: rgba(255, 255, 255, 0.2);
-  color: #ffffff;
+  background-color: var(--menu-hover-bg, rgba(25, 118, 210, 0.1));
+  color: var(--menu-hover-color, #1976d2);
 }
 
 .nav-menu :deep(.el-menu-item.is-active) {
-  background-color: rgba(255, 255, 255, 0.25);
-  color: #ffffff;
-  border-bottom: 2px solid #ffffff;
+  background-color: var(--menu-active-bg, rgba(25, 118, 210, 0.15));
+  color: var(--menu-active-color, #1976d2);
+  border-bottom: var(--menu-active-border, 2px solid #1976d2);
 }
 
 .nav-menu :deep(.el-menu-item .el-icon) {
@@ -283,31 +285,31 @@ const handleUserCommand = (command) => {
 }
 
 .search-input :deep(.el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.2);
-  border: 1px solid rgba(255, 255, 255, 0.3);
+  background: var(--search-bg, rgba(0, 0, 0, 0.05));
+  border: 1px solid var(--search-border, rgba(0, 0, 0, 0.1));
   border-radius: 20px;
   transition: all 0.3s ease;
 }
 
 .search-input :deep(.el-input__wrapper:hover) {
-  border-color: #ffffff;
+  border-color: var(--search-hover-border, #1976d2);
 }
 
 .search-input :deep(.el-input__wrapper.is-focus) {
-  border-color: #ffffff;
-  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.3);
+  border-color: var(--search-focus-border, #1976d2);
+  box-shadow: 0 0 0 2px var(--search-focus-shadow, rgba(25, 118, 210, 0.2));
 }
 
 .search-input :deep(.el-input__inner) {
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--search-text, #333);
 }
 
 .search-input :deep(.el-input__inner::placeholder) {
-  color: rgba(255, 255, 255, 0.6);
+  color: var(--search-placeholder, rgba(0, 0, 0, 0.6));
 }
 
 .search-input :deep(.el-input__prefix) {
-  color: rgba(255, 255, 255, 0.8);
+  color: var(--search-prefix, rgba(0, 0, 0, 0.8));
 }
 
 .user-section {
@@ -321,11 +323,11 @@ const handleUserCommand = (command) => {
   padding: 8px 12px;
   border-radius: 20px;
   transition: all 0.3s ease;
-  color: rgba(255, 255, 255, 0.9);
+  color: var(--user-text, #333);
 }
 
 .user-info:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: var(--user-hover-bg, rgba(0, 0, 0, 0.05));
 }
 
 .username {
