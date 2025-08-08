@@ -20,6 +20,14 @@ public interface UserService {
     User findByUserName(String username);
     
     /**
+     * 根据用户ID查找用户
+     * 
+     * @param userId 用户ID
+     * @return 用户对象，如果不存在返回null
+     */
+    User findById(Integer userId);
+    
+    /**
      * 注册新用户
      * 
      * @param username 用户名

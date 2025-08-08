@@ -85,6 +85,93 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
     }
     
     /**
+     * 分页查询已发布的博客列表（带筛选条件）
+     * 
+     * 实现思路：
+     * 1. 创建分页对象
+     * 2. 构建查询条件（状态为published，可选的分类和关键词筛选）
+     * 3. 执行分页查询
+     * 4. 返回分页结果
+     * 
+     * @param page 页码（从1开始）
+     * @param size 每页大小
+     * @param categoryId 分类ID，可选
+     * @param keyword 关键词，可选
+     * @return 分页结果
+     */
+    @Override
+    public Page<Blog> listPublished(int page, int size, Integer categoryId, String keyword) {
+        // 1. 创建分页对象
+        Page<Blog> pageParam = new Page<>(page, size);
+        
+        // 2. 构建查询条件：状态为published，按创建时间降序
+        LambdaQueryWrapper<Blog> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.eq(Blog::getStatus, "published")
+                   .orderByDesc(Blog::getCreateTime);
+        
+        // 3. 添加分类筛选条件
+        if (categoryId != null) {
+            queryWrapper.eq(Blog::getCategoryId, categoryId);
+        }
+        
+        // 4. 添加关键词筛选条件
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            queryWrapper.like(Blog::getTitle, keyword.trim())
+                       .or()
+                       .like(Blog::getContent, keyword.trim());
+        }
+        
+        // 5. 执行分页查询
+        return blogMapper.selectPage(pageParam, queryWrapper);
+    }
+    
+    /**
+     * 分页查询博客列表（带筛选条件）
+     * 
+     * 实现思路：
+     * 1. 创建分页对象
+     * 2. 构建查询条件（可选的状态、分类和关键词筛选）
+     * 3. 执行分页查询
+     * 4. 返回分页结果
+     * 
+     * @param page 页码（从1开始）
+     * @param size 每页大小
+     * @param status 状态筛选，可选
+     * @param categoryId 分类ID，可选
+     * @param keyword 关键词，可选
+     * @return 分页结果
+     */
+    @Override
+    public Page<Blog> listWithFilters(int page, int size, String status, Integer categoryId, String keyword) {
+        // 1. 创建分页对象
+        Page<Blog> pageParam = new Page<>(page, size);
+        
+        // 2. 构建查询条件：按创建时间降序
+        LambdaQueryWrapper<Blog> queryWrapper = new LambdaQueryWrapper<>();
+        queryWrapper.orderByDesc(Blog::getCreateTime);
+        
+        // 3. 添加状态筛选条件（只有当status不为null且不为空时才添加）
+        if (status != null && !status.trim().isEmpty()) {
+            queryWrapper.eq(Blog::getStatus, status.trim());
+        }
+        
+        // 4. 添加分类筛选条件
+        if (categoryId != null) {
+            queryWrapper.eq(Blog::getCategoryId, categoryId);
+        }
+        
+        // 5. 添加关键词筛选条件
+        if (keyword != null && !keyword.trim().isEmpty()) {
+            queryWrapper.like(Blog::getTitle, keyword.trim())
+                       .or()
+                       .like(Blog::getContent, keyword.trim());
+        }
+        
+        // 6. 执行分页查询
+        return blogMapper.selectPage(pageParam, queryWrapper);
+    }
+    
+    /**
      * 按分类分页查询博客列表
      * 
      * 实现思路：

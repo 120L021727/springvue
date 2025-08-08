@@ -10,6 +10,9 @@ import Login from '@/views/Login.vue'
 import Home from '@/views/Home.vue'
 import Tools from '@/views/Tools.vue'
 import Blog from '@/views/Blog.vue'
+import BlogDetail from '@/views/BlogDetail.vue'
+import BlogEdit from '@/views/BlogEdit.vue'
+import CategoryManagement from '@/views/CategoryManagement.vue'
 import About from '@/views/About.vue'
 import Converter from '@/views/Converter.vue'
 import Profile from '@/views/Profile.vue'
@@ -23,6 +26,10 @@ const routes = [
   { path: '/login', name: 'Login', component: Login },                            // 登录页
   { path: '/tools', name: 'Tools', component: Tools, meta: { requiresAuth: true } }, // 工具页（需要认证）
   { path: '/blog', name: 'Blog', component: Blog, meta: { requiresAuth: true } }, // 博客页（需要认证）
+  { path: '/blog/:id', name: 'BlogDetail', component: BlogDetail },               // 博客详情页（公开）
+  { path: '/blog/create', name: 'BlogCreate', component: BlogEdit, meta: { requiresAuth: true } }, // 创建博客（需要认证）
+  { path: '/blog/edit/:id', name: 'BlogEdit', component: BlogEdit, meta: { requiresAuth: true } }, // 编辑博客（需要认证）
+  { path: '/category-management', name: 'CategoryManagement', component: CategoryManagement, meta: { requiresAuth: true } }, // 分类管理页（需要认证）
   { path: '/about', name: 'About', component: About },                            // 关于页
   { path: '/profile', name: 'Profile', component: Profile, meta: { requiresAuth: true } }, // 个人信息页（需要认证）
   { path: '/converter', name: 'Converter', component: Converter, meta: { requiresAuth: true } } // 转换工具页（需要认证）

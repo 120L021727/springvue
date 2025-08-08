@@ -76,6 +76,14 @@
               </el-dropdown-item>
               <el-dropdown-item 
                 v-if="isLoggedIn()" 
+                command="category-management"
+                :disabled="!isLoggedIn()"
+              >
+                <el-icon><Document /></el-icon>
+                <span>分类管理</span>
+              </el-dropdown-item>
+              <el-dropdown-item 
+                v-if="isLoggedIn()" 
                 command="logout"
                 :disabled="!isLoggedIn()"
               >
@@ -143,7 +151,7 @@ const activeIndex = computed(() => {
   const path = route.path
   if (path === '/') return 'home'
   if (path === '/tools' || path === '/converter') return 'tools'
-  if (path === '/blog') return 'blog'
+  if (path.startsWith('/blog')) return 'blog'
   if (path === '/about') return 'about'
   return 'home'
 })
@@ -196,6 +204,11 @@ const handleUserCommand = (command) => {
     case 'profile':
       if (isLoggedIn()) {
         router.push('/profile')
+      }
+      break
+    case 'category-management':
+      if (isLoggedIn()) {
+        router.push('/category-management')
       }
       break
   }

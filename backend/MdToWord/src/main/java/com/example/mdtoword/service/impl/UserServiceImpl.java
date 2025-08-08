@@ -39,6 +39,17 @@ public class UserServiceImpl implements UserService {
         queryWrapper.eq(User::getUsername, username);
         return userMapper.selectOne(queryWrapper);
     }
+    
+    /**
+     * 根据用户ID查找用户
+     * 
+     * @param userId 用户ID
+     * @return 用户对象，如果不存在返回null
+     */
+    @Override
+    public User findById(Integer userId) {
+        return userMapper.selectById(userId);
+    }
 
     /**
      * 注册新用户

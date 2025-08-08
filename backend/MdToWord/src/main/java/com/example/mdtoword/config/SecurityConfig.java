@@ -97,7 +97,7 @@ public class SecurityConfig {
         // 允许的前端地址
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:5173"));
         // 允许的HTTP方法
-        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
+        configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "PATCH", "OPTIONS"));
         // 允许的请求头
         configuration.setAllowedHeaders(Arrays.asList("*"));
         // 允许携带认证信息（Cookie、Authorization头等）

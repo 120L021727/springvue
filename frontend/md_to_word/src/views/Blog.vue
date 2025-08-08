@@ -10,42 +10,198 @@
     <!-- 主要内容区域 -->
     <div class="main-content">
       <div class="blog-container">
-        <h1 class="page-title">技术博客</h1>
-        <p class="page-subtitle">分享技术心得，记录学习历程</p>
-        
-        <div class="blog-grid">
-          <el-card 
-            class="blog-card glass-effect" 
-            shadow="hover"
-            v-for="blog in blogs"
-            :key="blog.id"
-          >
-            <div class="blog-image">
-              <img :src="blog.image" :alt="blog.title" />
-            </div>
-            <div class="blog-content">
-              <div class="blog-meta">
-                <span class="blog-date">{{ blog.date }}</span>
-                <span class="blog-category">{{ blog.category }}</span>
-              </div>
-              <h3 class="blog-title">{{ blog.title }}</h3>
-              <p class="blog-excerpt">{{ blog.excerpt }}</p>
-              <div class="blog-footer">
-                <el-button type="primary" size="small" text>
-                  阅读全文
-                  <el-icon><ArrowRight /></el-icon>
-                </el-button>
-              </div>
-            </div>
-          </el-card>
+        <!-- 页面标题 -->
+        <div class="page-header">
+          <h1 class="page-title">坤坤的博客</h1>
+          <p class="page-subtitle">分享技术心得，记录学习历程</p>
         </div>
-        
-        <!-- 分页 -->
-        <div class="pagination-container">
+
+        <!-- 筛选和搜索区域 -->
+        <div class="filter-section">
+          <div class="filter-left">
+            <!-- 状态筛选 -->
+            <el-select 
+              v-model="selectedStatus" 
+              placeholder="文章状态" 
+              clearable
+              @change="handleStatusChange"
+              style="width: 120px; margin-right: 15px;"
+            >
+              <el-option label="全部文章" value="" />
+              <el-option label="已发布" value="published" />
+              <el-option label="草稿" value="draft" />
+            </el-select>
+
+            <!-- 分类筛选 -->
+            <el-select 
+              v-model="selectedCategory" 
+              placeholder="选择分类" 
+              clearable
+              @change="handleCategoryChange"
+              style="width: 200px; margin-right: 15px;"
+            >
+              <el-option label="全部分类" value="" />
+              <el-option 
+                v-for="category in categories" 
+                :key="category.id" 
+                :label="category.name" 
+                :value="category.id"
+              />
+            </el-select>
+
+            <!-- 排序方式 -->
+            <el-select 
+              v-model="sortBy" 
+              placeholder="排序方式"
+              @change="handleSortChange"
+              style="width: 150px;"
+            >
+              <el-option label="最新发布" value="latest" />
+              <el-option label="最早发布" value="earliest" />
+            </el-select>
+          </div>
+
+          <div class="filter-right">
+            <!-- 搜索框 -->
+            <el-input
+              v-model="searchKeyword"
+              placeholder="搜索博客标题..."
+              clearable
+              style="width: 250px; margin-right: 15px;"
+            >
+              <template #prefix>
+                <el-icon><Search /></el-icon>
+              </template>
+            </el-input>
+
+            <!-- 查询按钮 -->
+            <el-button 
+              type="primary" 
+              @click="loadBlogs"
+              :loading="loading"
+              style="margin-right: 15px;"
+            >
+              <el-icon><Search /></el-icon>
+              查询
+            </el-button>
+
+            <!-- 重置按钮 -->
+            <el-button 
+              @click="resetFilters"
+              style="margin-right: 15px;"
+            >
+              <el-icon><Refresh /></el-icon>
+              重置
+            </el-button>
+
+            <!-- 写博客按钮 -->
+            <el-button 
+              type="primary" 
+              @click="goToCreateBlog"
+              v-if="isLoggedIn()"
+            >
+              <el-icon><Edit /></el-icon>
+              写博客
+            </el-button>
+          </div>
+        </div>
+
+        <!-- 博客列表 -->
+        <div class="blog-list" v-loading="loading">
+          <el-empty v-if="blogs.length === 0 && !loading" description="暂无博客文章" />
+          
+          <div v-else class="blog-grid">
+            <el-card 
+              v-for="blog in blogs" 
+              :key="blog.id" 
+              class="blog-card"
+              :class="{ 'draft-card': blog.status === 'draft' }"
+              shadow="hover"
+              @click="viewBlog(blog.id)"
+            >
+              <div class="blog-card-content">
+                <div class="blog-header">
+                  <div class="blog-title-section">
+                    <h3 class="blog-title">{{ blog.title }}</h3>
+                    <!-- 状态标识 -->
+                    <el-tag 
+                      v-if="blog.status === 'draft'" 
+                      type="warning" 
+                      size="small"
+                      class="status-tag"
+                    >
+                      草稿
+                    </el-tag>
+                  </div>
+                  <div class="blog-meta">
+                    <span class="blog-category" v-if="getCategoryName(blog.categoryId)">
+                      {{ getCategoryName(blog.categoryId) }}
+                    </span>
+                    <span class="blog-date">{{ formatDate(blog.createTime) }}</span>
+                  </div>
+                </div>
+                
+                <div class="blog-excerpt">
+                  {{ getExcerpt(blog.content) }}
+                </div>
+                
+                <div class="blog-footer">
+                  <div class="blog-author">
+                    <el-avatar :size="24" icon="UserFilled" />
+                    <span>{{ getAuthorName(blog.authorId) }}</span>
+                  </div>
+                  
+                  <!-- 作者操作按钮 -->
+                  <div class="blog-actions" v-if="isAuthor(blog.authorId)">
+                    <!-- 草稿操作 -->
+                    <template v-if="blog.status === 'draft'">
+                      <el-button 
+                        type="success" 
+                        size="small"
+                        @click.stop="publishDraft(blog.id)"
+                      >
+                        发布
+                      </el-button>
+                      <el-button 
+                        type="primary" 
+                        size="small"
+                        @click.stop="editBlog(blog.id)"
+                      >
+                        编辑
+                      </el-button>
+                    </template>
+                    
+                    <!-- 已发布文章操作 -->
+                    <template v-else>
+                      <el-button 
+                        type="primary" 
+                        size="small"
+                        @click.stop="editBlog(blog.id)"
+                      >
+                        编辑
+                      </el-button>
+                    </template>
+                    
+                    <el-button 
+                      type="danger" 
+                      size="small"
+                      @click.stop="deleteBlog(blog.id)"
+                    >
+                      删除
+                    </el-button>
+                  </div>
+                </div>
+              </div>
+            </el-card>
+          </div>
+        </div>
+
+        <!-- 分页组件 -->
+        <div class="pagination-container" v-if="total > 0">
           <el-pagination
             v-model:current-page="currentPage"
             v-model:page-size="pageSize"
-            :page-sizes="[6, 12, 24]"
+            :page-sizes="[10, 20, 50, 100]"
             :total="total"
             layout="total, sizes, prev, pager, next, jumper"
             @size-change="handleSizeChange"
@@ -58,186 +214,360 @@
 </template>
 
 <script setup>
-import { ref } from 'vue'
-import { ArrowRight } from '@element-plus/icons-vue'
+import { ref, onMounted, computed } from 'vue'
+import { useRouter } from 'vue-router'
+import { ElMessage, ElMessageBox } from 'element-plus'
+import { Search, Edit, Refresh } from '@element-plus/icons-vue'
 import TopNavbar from '@/components/TopNavbar.vue'
+import { useAuth } from '@/composables/useAuth'
+import service from '@/utils/request'
 
-// 分页数据
+const router = useRouter()
+const { isLoggedIn, getCurrentUserId } = useAuth()
+
+// 响应式数据
+const loading = ref(false)
+const blogs = ref([])
+const categories = ref([])
+const total = ref(0)
 const currentPage = ref(1)
-const pageSize = ref(6)
-const total = ref(18)
+const pageSize = ref(10)
+const selectedCategory = ref('')
+const selectedStatus = ref('')
+const sortBy = ref('latest')
+const searchKeyword = ref('')
+const authors = ref({}) // 存储作者信息的缓存
 
-// 模拟博客数据
-const blogs = ref([
-  {
-    id: 1,
-    title: 'Vue 3 Composition API 深度解析',
-    excerpt: '深入探讨Vue 3 Composition API的设计理念、使用方法和最佳实践，帮助你更好地理解和使用Vue 3。',
-    date: '2024-01-15',
-    category: '前端开发',
-    image: 'https://via.placeholder.com/300x200/667eea/ffffff?text=Vue+3'
-  },
-  {
-    id: 2,
-    title: 'Spring Boot 微服务架构实践',
-    excerpt: '从零开始构建Spring Boot微服务应用，包括服务注册、配置管理、负载均衡等核心概念。',
-    date: '2024-01-12',
-    category: '后端开发',
-    image: 'https://via.placeholder.com/300x200/764ba2/ffffff?text=Spring+Boot'
-  },
-  {
-    id: 3,
-    title: 'Docker 容器化部署指南',
-    excerpt: '详细介绍Docker的基本概念、常用命令和实际部署案例，让你的应用部署更加简单高效。',
-    date: '2024-01-10',
-    category: 'DevOps',
-    image: 'https://via.placeholder.com/300x200/f093fb/ffffff?text=Docker'
-  },
-  {
-    id: 4,
-    title: 'TypeScript 高级类型系统',
-    excerpt: '探索TypeScript的高级类型特性，包括条件类型、映射类型、模板字面量类型等。',
-    date: '2024-01-08',
-    category: '前端开发',
-    image: 'https://via.placeholder.com/300x200/4facfe/ffffff?text=TypeScript'
-  },
-  {
-    id: 5,
-    title: 'Redis 缓存策略与优化',
-    excerpt: '学习Redis的各种缓存策略，包括缓存穿透、缓存雪崩、缓存击穿的解决方案。',
-    date: '2024-01-05',
-    category: '数据库',
-    image: 'https://via.placeholder.com/300x200/43e97b/ffffff?text=Redis'
-  },
-  {
-    id: 6,
-    title: 'Git 工作流最佳实践',
-    excerpt: '介绍Git Flow、GitHub Flow等主流工作流，以及团队协作中的Git使用技巧。',
-    date: '2024-01-03',
-    category: '工具使用',
-    image: 'https://via.placeholder.com/300x200/fa709a/ffffff?text=Git'
+// 计算属性
+const isAuthor = computed(() => {
+  return (authorId) => {
+    return isLoggedIn() && getCurrentUserId() === authorId
   }
-])
+})
 
-// 处理分页
-const handleSizeChange = (val) => {
-  pageSize.value = val
-  // 这里可以重新加载数据
+// 生命周期
+onMounted(() => {
+  loadCategories()
+  loadBlogs()
+})
+
+// 方法定义
+const loadCategories = async () => {
+  try {
+    const response = await service.get('/api/category/list')
+    if (response.data.success) {
+      categories.value = response.data.data
+    }
+  } catch (error) {
+    console.error('加载分类失败:', error)
+  }
 }
 
-const handleCurrentChange = (val) => {
-  currentPage.value = val
-  // 这里可以重新加载数据
+const loadBlogs = async () => {
+  loading.value = true
+  try {
+    const params = {
+      page: currentPage.value,
+      size: pageSize.value
+    }
+    
+    // 添加分类筛选
+    if (selectedCategory.value !== '' && selectedCategory.value != null) {
+      params.categoryId = selectedCategory.value
+    }
+    
+    // 添加状态筛选
+    if (selectedStatus.value !== '' && selectedStatus.value != null) {
+      params.status = selectedStatus.value
+    }
+    
+    // 添加关键词搜索
+    if (searchKeyword.value && searchKeyword.value.trim()) {
+      params.keyword = searchKeyword.value.trim()
+    }
+    
+    const response = await service.get('/api/blog/list', { params })
+    if (response.data.success) {
+      blogs.value = response.data.data.records
+      total.value = response.data.data.total
+      
+      // 加载作者信息
+      await loadAuthorsInfo()
+    }
+  } catch (error) {
+    console.error('加载博客失败:', error)
+    ElMessage.error('加载博客失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+const loadAuthorsInfo = async () => {
+  // 获取所有不重复的作者ID
+  const authorIds = [...new Set(blogs.value.map(blog => blog.authorId))]
+  
+  // 只加载还没有缓存的作者信息
+  const uncachedIds = authorIds.filter(id => !authors.value[id])
+  
+  for (const authorId of uncachedIds) {
+    try {
+      const response = await service.get(`/api/user/${authorId}`)
+      if (response.data.success) {
+        authors.value[authorId] = response.data.data
+      }
+    } catch (error) {
+      console.warn(`用户ID ${authorId} 不存在或无法访问`)
+      // 不抛出错误，继续处理其他用户
+    }
+  }
+}
+
+const handleCategoryChange = () => {
+  currentPage.value = 1
+  loadBlogs()
+}
+
+const handleStatusChange = () => {
+  currentPage.value = 1
+  loadBlogs()
+}
+
+const handleSortChange = () => {
+  currentPage.value = 1
+  loadBlogs()
+}
+
+const handleSizeChange = (newSize) => {
+  pageSize.value = newSize
+  currentPage.value = 1
+  loadBlogs()
+}
+
+const handleCurrentChange = (newPage) => {
+  currentPage.value = newPage
+  loadBlogs()
+}
+
+const viewBlog = (blogId) => {
+  router.push(`/blog/${blogId}`)
+}
+
+const editBlog = (blogId) => {
+  router.push(`/blog/edit/${blogId}`)
+}
+
+const deleteBlog = async (blogId) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要删除这篇博客吗？删除后无法恢复。',
+      '确认删除',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'warning'
+      }
+    )
+    
+    const response = await service.delete(`/api/blog/${blogId}`)
+    if (response.data.success) {
+      ElMessage.success('博客删除成功')
+      loadBlogs()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除博客失败:', error)
+      ElMessage.error('删除博客失败')
+    }
+  }
+}
+
+// 发布草稿
+const publishDraft = async (blogId) => {
+  try {
+    await ElMessageBox.confirm(
+      '确定要发布这篇草稿吗？发布后将变为公开状态。',
+      '确认发布',
+      {
+        confirmButtonText: '确定',
+        cancelButtonText: '取消',
+        type: 'info'
+      }
+    )
+    
+    const response = await service.patch(`/api/blog/${blogId}/status?status=published`)
+    
+    if (response.data.success) {
+      ElMessage.success('草稿发布成功')
+      loadBlogs()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('发布草稿失败:', error)
+      ElMessage.error('发布草稿失败')
+    }
+  }
+}
+
+const goToCreateBlog = () => {
+  router.push('/blog/create')
+}
+
+const resetFilters = () => {
+  selectedCategory.value = ''
+  selectedStatus.value = ''
+  searchKeyword.value = ''
+  currentPage.value = 1
+  loadBlogs()
+}
+
+const getCategoryName = (categoryId) => {
+  if (!categoryId) return ''
+  const category = categories.value.find(c => c.id === categoryId)
+  return category ? category.name : ''
+}
+
+const getExcerpt = (content) => {
+  if (!content) return ''
+  // 移除Markdown标记，获取纯文本
+  const text = content.replace(/[#*`]/g, '').replace(/\n/g, ' ')
+  return text.length > 100 ? text.substring(0, 100) + '...' : text
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return ''
+  const date = new Date(dateString)
+  return date.toLocaleDateString('zh-CN', {
+    year: 'numeric',
+    month: 'long',
+    day: 'numeric'
+  })
+}
+
+const getAuthorName = (authorId) => {
+  if (!authorId) return ''
+  const author = authors.value[authorId]
+  return author ? author.nickname : `用户${authorId}`
 }
 </script>
 
 <style scoped>
-/**
- * 博客页面特定样式
- * 使用main.css中的公共样式类，只保留特定样式
- */
-
-
-
 .blog-container {
   max-width: 1200px;
   margin: 0 auto;
   padding: 0 20px;
 }
 
-
-
-.blog-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
-  gap: 30px;
+.page-header {
+  text-align: center;
   margin-bottom: 40px;
 }
 
+.filter-section {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: 10px;
+  backdrop-filter: blur(10px);
+}
+
+.filter-left, .filter-right {
+  display: flex;
+  align-items: center;
+}
+
+.blog-list {
+  margin-bottom: 40px;
+}
+
+.blog-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+  gap: 20px;
+}
+
 .blog-card {
-  border-radius: 15px;
-  overflow: hidden;
   transition: all 0.3s ease;
-  /* 移除白色背景，使用透明效果 */
+  cursor: pointer;
+  margin-bottom: 20px;
 }
 
 .blog-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+  transform: translateY(-2px);
+  box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-.blog-image {
-  width: 100%;
-  height: 200px;
-  overflow: hidden;
+/* 草稿卡片特殊样式 */
+.draft-card {
+  border-left: 4px solid #e6a23c;
+  background: rgba(230, 162, 60, 0.05);
 }
 
-.blog-image img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-  transition: transform 0.3s ease;
+.draft-card:hover {
+  background: rgba(230, 162, 60, 0.1);
 }
 
-.blog-card:hover .blog-image img {
-  transform: scale(1.05);
+.blog-title-section {
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.blog-content {
-  padding: 20px;
+.blog-title {
+  margin: 0 0 10px 0;
+  font-size: 1.2rem;
+  font-weight: 600;
+  color: #333;
+  line-height: 1.4;
+}
+
+.status-tag {
+  margin-left: 10px;
 }
 
 .blog-meta {
   display: flex;
-  justify-content: space-between;
   align-items: center;
-  margin-bottom: 15px;
+  gap: 15px;
   font-size: 0.9rem;
-}
-
-.blog-date {
-  color: rgba(255, 255, 255, 0.8);
-  background: rgba(255, 255, 255, 0.1);
-  padding: 4px 8px;
-  border-radius: 12px;
-  font-size: 0.8rem;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.7);
 }
 
 .blog-category {
-  color: #4CAF50;
-  background: rgba(76, 175, 80, 0.1);
+  background: rgba(255, 255, 255, 0.2);
   padding: 4px 8px;
-  border-radius: 12px;
+  border-radius: 4px;
   font-size: 0.8rem;
-  font-weight: 500;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(76, 175, 80, 0.2);
-}
-
-.blog-title {
-  font-size: 1.3rem;
-  font-weight: 600;
-  margin-bottom: 10px;
-  color: white;
-  line-height: 1.4;
-  text-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
 }
 
 .blog-excerpt {
   color: rgba(255, 255, 255, 0.8);
   line-height: 1.6;
   margin-bottom: 20px;
-  display: -webkit-box;
-  -webkit-line-clamp: 3;
-  -webkit-box-orient: vertical;
-  overflow: hidden;
+  font-size: 0.95rem;
 }
 
 .blog-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: space-between;
+  align-items: center;
+  padding-top: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.blog-author {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 0.9rem;
+}
+
+.blog-actions {
+  display: flex;
+  gap: 10px;
 }
 
 .pagination-container {
@@ -246,68 +576,28 @@ const handleCurrentChange = (val) => {
   margin-top: 40px;
 }
 
-/* 分页组件样式调整 */
-:deep(.el-pagination) {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 20px;
-  border-radius: 10px;
-  backdrop-filter: blur(10px);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-}
-
-:deep(.el-pagination .el-pager li) {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-:deep(.el-pagination .el-pager li.is-active) {
-  background: rgba(76, 175, 80, 0.3);
-  color: white;
-  border: 1px solid rgba(76, 175, 80, 0.5);
-}
-
-:deep(.el-pagination .btn-prev),
-:deep(.el-pagination .btn-next) {
-  background: transparent;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-:deep(.el-pagination .el-pagination__total),
-:deep(.el-pagination .el-pagination__sizes) {
-  color: rgba(255, 255, 255, 0.8);
-}
-
-:deep(.el-pagination .el-select .el-input__wrapper) {
-  background: rgba(255, 255, 255, 0.1);
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  color: rgba(255, 255, 255, 0.8);
-}
-
-:deep(.el-pagination .el-select .el-input__inner) {
-  color: rgba(255, 255, 255, 0.8);
-}
-
 /* 响应式设计 */
 @media (max-width: 768px) {
-  .blog-container {
-    padding: 0 15px;
+  .filter-section {
+    flex-direction: column;
+    gap: 15px;
   }
   
-  .page-title {
-    font-size: 2rem;
-  }
-  
-  .page-subtitle {
-    font-size: 1rem;
+  .filter-left, .filter-right {
+    width: 100%;
+    justify-content: center;
   }
   
   .blog-grid {
     grid-template-columns: 1fr;
-    gap: 20px;
   }
   
-  .blog-card {
-    margin: 0 10px;
+  .blog-card-content {
+    padding: 15px;
+  }
+  
+  .blog-title {
+    font-size: 1.2rem;
   }
 }
 </style> 

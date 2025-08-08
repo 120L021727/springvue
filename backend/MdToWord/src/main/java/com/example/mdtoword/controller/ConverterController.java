@@ -48,4 +48,22 @@ public class ConverterController {
     public ResponseEntity<Result<String>> health() {
         return ResponseEntity.ok(Result.success("Converter service is running"));
     }
+
+    /**
+     * 测试异常处理器接口
+     */
+    @GetMapping("/test-exception")
+    public ResponseEntity<Result<String>> testException() {
+        // 测试BusinessException
+        throw new BusinessException("这是一个测试业务异常");
+    }
+
+    /**
+     * 测试运行时异常接口
+     */
+    @GetMapping("/test-runtime-exception")
+    public ResponseEntity<Result<String>> testRuntimeException() {
+        // 测试RuntimeException
+        throw new RuntimeException("这是一个测试运行时异常");
+    }
 }

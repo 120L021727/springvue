@@ -57,6 +57,17 @@ export function useAuth() {
   }
 
   /**
+   * 获取当前登录用户的ID
+   * @returns {number|null} 用户ID，如果未登录则返回null
+   */
+  const getCurrentUserId = () => {
+    if (userStore.user && userStore.user.id) {
+      return userStore.user.id
+    }
+    return null
+  }
+
+  /**
    * 获取用户信息
    * 返回完整的用户对象
    * @returns {Object|null} 用户信息对象或null
@@ -66,11 +77,12 @@ export function useAuth() {
   }
 
   return {
-    userStore,      // Pinia用户状态管理实例
-    initUserState,  // 初始化用户状态方法
-    autoInitUser,   // 自动初始化方法
-    getUsername,    // 获取用户名方法
-    isLoggedIn,     // 登录状态检查方法
-    getUser         // 获取用户信息方法
+    userStore,         // Pinia用户状态管理实例
+    initUserState,     // 初始化用户状态方法
+    autoInitUser,      // 自动初始化方法
+    getUsername,       // 获取用户名方法
+    isLoggedIn,        // 登录状态检查方法
+    getCurrentUserId,  // 获取当前用户ID方法
+    getUser            // 获取用户信息方法
   }
 } 

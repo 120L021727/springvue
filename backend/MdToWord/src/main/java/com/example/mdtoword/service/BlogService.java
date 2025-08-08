@@ -32,6 +32,29 @@ public interface BlogService {
     Page<Blog> listPublished(int page, int size);
     
     /**
+     * 分页查询已发布的博客列表（带筛选条件）
+     * 
+     * @param page 页码（从1开始）
+     * @param size 每页大小
+     * @param categoryId 分类ID，可选
+     * @param keyword 关键词，可选
+     * @return 分页结果
+     */
+    Page<Blog> listPublished(int page, int size, Integer categoryId, String keyword);
+    
+    /**
+     * 分页查询博客列表（带筛选条件）
+     * 
+     * @param page 页码（从1开始）
+     * @param size 每页大小
+     * @param status 状态筛选，可选
+     * @param categoryId 分类ID，可选
+     * @param keyword 关键词，可选
+     * @return 分页结果
+     */
+    Page<Blog> listWithFilters(int page, int size, String status, Integer categoryId, String keyword);
+    
+    /**
      * 按分类分页查询博客列表
      * 
      * @param categoryId 分类ID
