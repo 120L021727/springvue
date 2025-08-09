@@ -46,7 +46,7 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                                   FilterChain filterChain) throws ServletException, IOException {
         
         try {
-            // 从请求头中提取JWT Token
+            // 从请求头中提取JWT Token（支持前后端跨域，允许无Token访问公共接口）
             String token = getTokenFromRequest(request);
             
             // 如果Token存在且有效
@@ -100,9 +100,10 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        // 跳过登录、注册、健康检查等公开接口
+        // 跳过登录、注册、健康检查和头像访问等公开接口
         return path.startsWith("/api/user/register") || 
                path.startsWith("/api/user/login") ||
-               path.startsWith("/api/converter/health");
+               path.startsWith("/api/converter/health") ||
+               path.startsWith("/api/file/avatar/");
     }
 } 

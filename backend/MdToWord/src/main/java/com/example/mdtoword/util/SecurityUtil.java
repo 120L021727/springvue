@@ -38,19 +38,16 @@ public class SecurityUtil {
      */
     public Integer getCurrentUserId() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            
-            // 根据用户名查询用户信息
-            User user = userService.findByUserName(username);
-            if (user != null) {
-                return user.getId();
-            } else {
-                logger.error("用户不存在: {}", username);
-                throw new BusinessException("用户不存在");
-            }
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            throw new BusinessException("用户未登录");
         }
-        throw new BusinessException("用户未登录");
+        String username = authentication.getName();
+        User user = userService.findByUserName(username);
+        if (user == null) {
+            logger.error("用户不存在: {}", username);
+            throw new BusinessException("用户不存在");
+        }
+        return user.getId();
     }
     
     /**
@@ -66,19 +63,16 @@ public class SecurityUtil {
      */
     public User getCurrentUser() {
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            
-            // 根据用户名查询用户信息
-            User user = userService.findByUserName(username);
-            if (user != null) {
-                return user;
-            } else {
-                logger.error("用户不存在: {}", username);
-                throw new BusinessException("用户不存在");
-            }
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getName())) {
+            throw new BusinessException("用户未登录");
         }
-        throw new BusinessException("用户未登录");
+        String username = authentication.getName();
+        User user = userService.findByUserName(username);
+        if (user == null) {
+            logger.error("用户不存在: {}", username);
+            throw new BusinessException("用户不存在");
+        }
+        return user;
     }
     
     /**

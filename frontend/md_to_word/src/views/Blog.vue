@@ -104,24 +104,25 @@
               v-for="blog in blogs" 
               :key="blog.id" 
               class="blog-card"
-              :class="{ 'draft-card': blog.status === 'draft' }"
               shadow="hover"
               @click="viewBlog(blog.id)"
             >
               <div class="blog-card-content">
+                <!-- 博客标题和状态 -->
                 <div class="blog-header">
                   <div class="blog-title-section">
                     <h3 class="blog-title">{{ blog.title }}</h3>
-                    <!-- 状态标识 -->
                     <el-tag 
                       v-if="blog.status === 'draft'" 
-                      :type="getStatusTagType(blog.status)" 
+                      type="warning" 
                       size="small"
                       class="status-tag"
                     >
-                      {{ getStatusText(blog.status) }}
+                      草稿
                     </el-tag>
                   </div>
+                  
+                  <!-- 博客元信息 -->
                   <div class="blog-meta">
                     <span class="blog-category" v-if="getCategoryName(blog.categoryId, categories)">
                       {{ getCategoryName(blog.categoryId, categories) }}
@@ -130,51 +131,44 @@
                   </div>
                 </div>
                 
+                <!-- 博客摘要 -->
                 <div class="blog-excerpt">
                   {{ getExcerpt(blog.content) }}
                 </div>
                 
+                <!-- 博客底部信息 -->
                 <div class="blog-footer">
                   <div class="blog-author">
                     <el-avatar :size="24" icon="UserFilled" />
-                    <span>{{ getAuthorName(blog.authorId, authors) }}</span>
+                    <span>{{ getAuthorName(blog.authorId) }}</span>
                   </div>
                   
                   <!-- 作者操作按钮 -->
-                  <div class="blog-actions" v-if="isAuthor(blog.authorId)">
-                    <!-- 草稿操作 -->
-                    <template v-if="blog.status === 'draft'">
-                      <el-button 
-                        type="success" 
-                        size="small"
-                        @click.stop="publishDraft(blog.id)"
-                      >
-                        发布
-                      </el-button>
-                      <el-button 
-                        type="primary" 
-                        size="small"
-                        @click.stop="editBlog(blog.id)"
-                      >
-                        编辑
-                      </el-button>
-                    </template>
+                  <div class="blog-actions" v-if="isAuthor(blog.authorId)" @click.stop>
+                    <!-- 草稿发布按钮 -->
+                    <el-button 
+                      v-if="blog.status === 'draft'"
+                      type="success" 
+                      size="small"
+                      @click="publishDraft(blog.id)"
+                    >
+                      发布
+                    </el-button>
                     
-                    <!-- 已发布文章操作 -->
-                    <template v-else>
-                      <el-button 
-                        type="primary" 
-                        size="small"
-                        @click.stop="editBlog(blog.id)"
-                      >
-                        编辑
-                      </el-button>
-                    </template>
+                    <!-- 编辑按钮 -->
+                    <el-button 
+                      type="primary" 
+                      size="small"
+                      @click="editBlog(blog.id)"
+                    >
+                      编辑
+                    </el-button>
                     
+                    <!-- 删除按钮 -->
                     <el-button 
                       type="danger" 
                       size="small"
-                      @click.stop="deleteBlog(blog.id)"
+                      @click="deleteBlog(blog.id)"
                     >
                       删除
                     </el-button>
@@ -203,22 +197,14 @@
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Edit, Refresh } from '@element-plus/icons-vue'
+import { Search, Refresh, Edit } from '@element-plus/icons-vue'
 import TopNavbar from '@/components/TopNavbar.vue'
 import { useAuth } from '@/composables/useAuth'
-import { BlogApiService, CategoryApiService, UserApiService } from '@/utils/blogApi'
-import { 
-  formatDate, 
-  getExcerpt, 
-  getCategoryName, 
-  getAuthorName, 
-  buildBlogQueryParams,
-  getStatusText,
-  getStatusTagType
-} from '@/utils/blogUtils'
+import { blogApi } from '@/utils/blogApi'
+import { formatDate, getExcerpt, getCategoryName } from '@/utils/blogUtils'
 
 const router = useRouter()
 const { isLoggedIn, getCurrentUserId } = useAuth()
@@ -228,55 +214,36 @@ const loading = ref(false)
 const blogs = ref([])
 const categories = ref([])
 const total = ref(0)
-const authors = ref({})
+
+// 作者信息缓存
+const authorCache = ref(new Map())
 
 // 筛选条件
-const filters = ref({
+const filters = reactive({
   status: '',
   categoryId: '',
   keyword: ''
 })
 
-// 分页信息
-const pagination = ref({
+// 分页配置
+const pagination = reactive({
   page: 1,
   size: 10
 })
 
-// 计算属性
-const isAuthor = computed(() => {
-  return (authorId) => {
-    return isLoggedIn() && getCurrentUserId() === authorId
-  }
-})
-
-// 生命周期
-onMounted(() => {
-  loadCategories()
-  loadBlogs()
-})
-
-// 方法定义
-const loadCategories = async () => {
-  try {
-    const response = await CategoryApiService.getCategoryList()
-    if (response.data.success) {
-      categories.value = response.data.data
-    }
-  } catch (error) {
-    console.error('加载分类失败:', error)
-  }
-}
-
+// 加载博客列表
 const loadBlogs = async () => {
-  loading.value = true
   try {
-    const params = buildBlogQueryParams({
-      ...filters.value,
-      ...pagination.value
-    })
+    loading.value = true
     
-    const response = await BlogApiService.getBlogList(params)
+    const params = {
+      page: pagination.page,
+      size: pagination.size,
+      ...filters
+    }
+    
+    const response = await blogApi.getBlogList(params)
+    
     if (response.data.success) {
       blogs.value = response.data.data.records
       total.value = response.data.data.total
@@ -285,120 +252,154 @@ const loadBlogs = async () => {
       await loadAuthorsInfo()
     }
   } catch (error) {
-    console.error('加载博客失败:', error)
-    ElMessage.error('加载博客失败')
+    console.error('加载博客列表失败:', error)
+    ElMessage.error('加载博客列表失败')
   } finally {
     loading.value = false
   }
 }
 
+// 加载分类列表
+const loadCategories = async () => {
+  try {
+    const response = await blogApi.getCategoryList()
+    if (response.data.success) {
+      categories.value = response.data.data
+    }
+  } catch (error) {
+    console.error('加载分类列表失败:', error)
+  }
+}
+
+// 加载作者信息（按需加载并缓存）
 const loadAuthorsInfo = async () => {
   // 获取所有不重复的作者ID
   const authorIds = [...new Set(blogs.value.map(blog => blog.authorId))]
   
   // 只加载还没有缓存的作者信息
-  const uncachedIds = authorIds.filter(id => !authors.value[id])
+  const uncachedIds = authorIds.filter(id => !authorCache.value.has(id))
   
   for (const authorId of uncachedIds) {
     try {
-      const response = await UserApiService.getUserInfo(authorId)
+      const response = await blogApi.getUserInfo(authorId)
       if (response.data.success) {
-        authors.value[authorId] = response.data.data
+        authorCache.value.set(authorId, response.data.data)
       }
     } catch (error) {
       console.warn(`用户ID ${authorId} 不存在或无法访问`)
+      // 设置默认值，避免重复请求
+      authorCache.value.set(authorId, { id: authorId, nickname: `用户${authorId}` })
     }
   }
 }
 
+// 获取作者名称
+const getAuthorName = (authorId) => {
+  if (!authorId) return ''
+  const author = authorCache.value.get(authorId)
+  return author ? author.nickname : `用户${authorId}`
+}
+
+// 筛选条件变化处理
 const handleFilterChange = () => {
-  pagination.value.page = 1
+  pagination.page = 1
   loadBlogs()
 }
 
-const handleSizeChange = (newSize) => {
-  pagination.value.size = newSize
-  pagination.value.page = 1
+// 重置筛选条件
+const resetFilters = () => {
+  Object.assign(filters, {
+    status: '',
+    categoryId: '',
+    keyword: ''
+  })
+  pagination.page = 1
   loadBlogs()
 }
 
-const handleCurrentChange = (newPage) => {
-  pagination.value.page = newPage
+// 分页处理
+const handleSizeChange = (size) => {
+  pagination.size = size
+  pagination.page = 1
   loadBlogs()
 }
 
+const handleCurrentChange = (page) => {
+  pagination.page = page
+  loadBlogs()
+}
+
+// 查看博客详情
 const viewBlog = (blogId) => {
   router.push(`/blog/${blogId}`)
 }
 
+// 编辑博客
 const editBlog = (blogId) => {
   router.push(`/blog/edit/${blogId}`)
 }
 
-const deleteBlog = async (blogId) => {
-  try {
-    await ElMessageBox.confirm(
-      '确定要删除这篇博客吗？删除后无法恢复。',
-      '确认删除',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'warning'
-      }
-    )
-    
-    const response = await BlogApiService.deleteBlog(blogId)
-    if (response.data.success) {
-      ElMessage.success('博客删除成功')
-      loadBlogs()
-    }
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error('删除博客失败:', error)
-      ElMessage.error('删除博客失败')
-    }
-  }
-}
-
+// 发布草稿
 const publishDraft = async (blogId) => {
   try {
-    await ElMessageBox.confirm(
-      '确定要发布这篇草稿吗？发布后将变为公开状态。',
-      '确认发布',
-      {
-        confirmButtonText: '确定',
-        cancelButtonText: '取消',
-        type: 'info'
-      }
-    )
+    await ElMessageBox.confirm('确定要发布这篇草稿吗？', '确认发布', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
     
-    const response = await BlogApiService.updateBlogStatus(blogId, 'published')
+    const response = await blogApi.updateBlogStatus(blogId, 'published')
     
     if (response.data.success) {
-      ElMessage.success('草稿发布成功')
+      ElMessage.success('发布成功')
       loadBlogs()
     }
   } catch (error) {
     if (error !== 'cancel') {
-      console.error('发布草稿失败:', error)
-      ElMessage.error('发布草稿失败')
+      console.error('发布失败:', error)
+      ElMessage.error('发布失败')
     }
   }
 }
 
+// 删除博客
+const deleteBlog = async (blogId) => {
+  try {
+    await ElMessageBox.confirm('确定要删除这篇博客吗？此操作不可恢复！', '确认删除', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    const response = await blogApi.deleteBlog(blogId)
+    
+    if (response.data.success) {
+      ElMessage.success('删除成功')
+      loadBlogs()
+    }
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error('删除失败:', error)
+      ElMessage.error('删除失败')
+    }
+  }
+}
+
+// 跳转到创建博客页面
 const goToCreateBlog = () => {
   router.push('/blog/create')
 }
 
-const resetFilters = () => {
-  filters.value = {
-    status: '',
-    categoryId: '',
-    keyword: ''
-  }
-  pagination.value.page = 1
-  loadBlogs()
+// 检查是否为作者
+const isAuthor = (authorId) => {
+  return isLoggedIn() && getCurrentUserId() === authorId
 }
+
+// 页面初始化
+onMounted(() => {
+  loadCategories()
+  loadBlogs()
+})
 </script>
 
 <style scoped>
@@ -442,39 +443,43 @@ const resetFilters = () => {
 .blog-card {
   transition: all 0.3s ease;
   cursor: pointer;
-  margin-bottom: 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
 }
 
 .blog-card:hover {
   transform: translateY(-2px);
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-.draft-card {
-  border-left: 4px solid #e6a23c;
-  background: rgba(230, 162, 60, 0.05);
+.blog-card-content {
+  padding: 20px;
 }
 
-.draft-card:hover {
-  background: rgba(230, 162, 60, 0.1);
+.blog-header {
+  margin-bottom: 15px;
 }
 
 .blog-title-section {
   display: flex;
   align-items: center;
   gap: 10px;
+  margin-bottom: 10px;
 }
 
 .blog-title {
-  margin: 0 0 10px 0;
+  margin: 0;
   font-size: 1.2rem;
   font-weight: 600;
-  color: #333;
+  color: #ffffff;
   line-height: 1.4;
+  flex: 1;
 }
 
 .status-tag {
-  margin-left: 10px;
+  flex-shrink: 0;
 }
 
 .blog-meta {
@@ -492,11 +497,19 @@ const resetFilters = () => {
   font-size: 0.8rem;
 }
 
+.blog-date {
+  color: rgba(255, 255, 255, 0.6);
+}
+
 .blog-excerpt {
   color: rgba(255, 255, 255, 0.8);
   line-height: 1.6;
   margin-bottom: 20px;
   font-size: 0.95rem;
+  display: -webkit-box;
+  -webkit-line-clamp: 3;
+  -webkit-box-orient: vertical;
+  overflow: hidden;
 }
 
 .blog-footer {
@@ -517,7 +530,7 @@ const resetFilters = () => {
 
 .blog-actions {
   display: flex;
-  gap: 10px;
+  gap: 8px;
 }
 
 .pagination-container {
@@ -546,7 +559,12 @@ const resetFilters = () => {
   }
   
   .blog-title {
-    font-size: 1.2rem;
+    font-size: 1.1rem;
+  }
+  
+  .blog-actions {
+    flex-direction: column;
+    gap: 5px;
   }
 }
 </style>

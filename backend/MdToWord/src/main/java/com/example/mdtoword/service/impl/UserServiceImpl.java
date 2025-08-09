@@ -93,18 +93,19 @@ public class UserServiceImpl implements UserService {
      */
     @Override
     public void updateAvatar(String avatarUrl) {
-        // 从SecurityContextHolder获取当前登录用户
         Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            
-            // 获取用户并更新头像
-            User user = findByUserName(username);
-            if (user != null) {
-                user.setUserPic(avatarUrl);
-                userMapper.updateById(user);
-            }
+        if (authentication == null || !authentication.isAuthenticated()) {
+            return;
         }
+        String username = authentication.getName();
+        User user = findByUserName(username);
+        if (user == null) {
+            return;
+        }
+        User updateUser = new User();
+        updateUser.setId(user.getId());
+        updateUser.setUserPic(avatarUrl);
+        userMapper.updateById(updateUser);
     }
 
     /**

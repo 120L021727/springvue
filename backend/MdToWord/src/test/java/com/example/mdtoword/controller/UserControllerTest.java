@@ -3,7 +3,6 @@ package com.example.mdtoword.controller;
 import com.example.mdtoword.pojo.Result;
 import com.example.mdtoword.pojo.User;
 import com.example.mdtoword.service.UserService;
-import com.example.mdtoword.util.JwtUtil;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;
@@ -27,14 +26,7 @@ class UserControllerTest {
     @Mock
     private UserService userService;
 
-    @Mock
-    private AuthenticationManager authenticationManager;
-
-    @Mock
-    private JwtUtil jwtUtil;
-
-    @Mock
-    private Authentication authentication;
+    // 认证相关逻辑已迁移到Spring Security表单登录与处理器，不在此控制器中单测
 
     @InjectMocks
     private UserController userController;
@@ -62,39 +54,20 @@ class UserControllerTest {
         // Given
         String username = "existinguser";
         String password = "password";
-        User existingUser = new User();
-        existingUser.setUsername(username);
-        when(userService.findByUserName(username)).thenReturn(existingUser);
+        doThrow(new com.example.mdtoword.exception.BusinessException("用户名已存在"))
+                .when(userService).register(username, password);
 
-        // When & Then
-        assertThrows(com.example.mdtoword.exception.BusinessException.class, () -> {
-            userController.register(username, password);
-        });
+        // When
+        ResponseEntity<Result<String>> response = userController.register(username, password);
+
+        // Then
+        assertEquals(HttpStatus.BAD_REQUEST, response.getStatusCode());
+        assertNotNull(response.getBody());
+        assertFalse(response.getBody().getSuccess());
     }
 
     @Test
-    void testLoginSuccess() {
-        // Given
-        String username = "testuser";
-        String password = "password";
-        String token = "jwt-token";
-        User user = new User();
-        user.setUsername(username);
-
-        when(authenticationManager.authenticate(any(UsernamePasswordAuthenticationToken.class)))
-                .thenReturn(authentication);
-        when(jwtUtil.generateToken(username)).thenReturn(token);
-        when(userService.findByUserName(username)).thenReturn(user);
-
-        // When
-        ResponseEntity<Result<Map<String, Object>>> response = userController.login(username, password);
-
-        // Then
-        assertEquals(HttpStatus.OK, response.getStatusCode());
-        assertNotNull(response.getBody());
-        assertTrue(response.getBody().getSuccess());
-        assertEquals("登录成功", response.getBody().getMessage());
-    }
+    // 登录由Security处理，不在此控制器中测试
 
     @Test
     void testLogoutSuccess() {
@@ -105,6 +78,6 @@ class UserControllerTest {
         assertEquals(HttpStatus.OK, response.getStatusCode());
         assertNotNull(response.getBody());
         assertTrue(response.getBody().getSuccess());
-        assertEquals("退出成功", response.getBody().getMessage());
+        assertEquals("登出成功", response.getBody().getMessage());
     }
 } 

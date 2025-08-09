@@ -75,25 +75,12 @@ public class UserController {
      */
     @GetMapping("/{userId}")
     public ResponseEntity<Result<User>> getUserById(@PathVariable Integer userId) {
-        try {
-            System.out.println("正在查找用户ID: " + userId);
-            User user = userService.findById(userId);
-            if (user == null) {
-                System.out.println("用户ID " + userId + " 不存在");
-                return ResponseEntity.notFound().build();
-            }
-            
-            System.out.println("找到用户: " + user.getUsername());
-            // 出于安全考虑，不返回密码等敏感信息
-            user.setPassword(null);
-            
-            return ResponseEntity.ok(Result.success(user));
-        } catch (Exception e) {
-            System.err.println("获取用户信息失败，用户ID: " + userId + ", 错误: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest()
-                .body(Result.error("获取用户信息失败"));
+        User user = userService.findById(userId);
+        if (user == null) {
+            return ResponseEntity.ok(Result.notFound("用户不存在"));
         }
+        user.setPassword(null);
+        return ResponseEntity.ok(Result.success(user));
     }
     
     /**

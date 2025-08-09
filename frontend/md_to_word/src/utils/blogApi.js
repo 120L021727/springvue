@@ -104,7 +104,7 @@ class BlogApiService {
    * 功能说明：
    * - 删除指定的博客文章
    * - 只有作者可以删除自己的博客
-   * - 执行物理删除操作
+   * - 删除后无法恢复
    * - 权限验证由后端处理
    * 
    * @param {number} id 博客ID
@@ -119,22 +119,21 @@ class BlogApiService {
    * 
    * 功能说明：
    * - 更新博客的发布状态
-   * - 支持草稿发布（draft -> published）
-   * - 支持撤回发布（published -> draft）
-   * - 只有作者可以修改博客状态
+   * - 支持草稿发布为已发布
+   * - 只有作者可以更新状态
    * 
    * @param {number} id 博客ID
-   * @param {string} status 新状态，只能是draft或published
-   * @returns {Promise} API响应，包含状态更新结果
+   * @param {string} status 新状态，可选值：draft/published
+   * @returns {Promise} API响应，包含更新结果
    */
   static updateBlogStatus(id, status) {
-    return service.patch(`/api/blog/${id}/status?status=${status}`)
+    return service.patch(`/api/blog/${id}/status`, null, { params: { status } })
   }
 }
 
 /**
  * 分类API服务类
- * 提供博客分类的管理功能
+ * 提供博客分类的增删改查功能
  */
 class CategoryApiService {
   /**
@@ -142,8 +141,8 @@ class CategoryApiService {
    * 
    * 功能说明：
    * - 获取所有可用的博客分类
-   * - 按排序字段升序排列
-   * - 包含分类的基本信息（ID、名称、描述等）
+   * - 按排序字段排序
+   * - 包含分类的基本信息
    * 
    * @returns {Promise} API响应，包含分类列表
    */
@@ -155,8 +154,8 @@ class CategoryApiService {
    * 获取分类详情
    * 
    * 功能说明：
-   * - 根据分类ID获取分类的详细信息
-   * - 包含分类的名称、描述、排序值等
+   * - 根据分类ID获取分类详细信息
+   * - 包含分类的名称、描述、排序等信息
    * 
    * @param {number} id 分类ID
    * @returns {Promise} API响应，包含分类详细信息
@@ -170,13 +169,13 @@ class CategoryApiService {
    * 
    * 功能说明：
    * - 创建新的博客分类
-   * - 验证分类名称的唯一性
-   * - 自动设置排序值（如果未指定）
+   * - 支持设置名称、描述、排序等
+   * - 数据验证由后端处理
    * 
    * @param {Object} categoryData 分类数据
    * @param {string} categoryData.name 分类名称
    * @param {string} categoryData.description 分类描述，可选
-   * @param {number} categoryData.sortOrder 排序值，可选
+   * @param {number} categoryData.sort 排序值，可选
    * @returns {Promise} API响应，包含创建结果
    */
   static createCategory(categoryData) {
@@ -188,14 +187,14 @@ class CategoryApiService {
    * 
    * 功能说明：
    * - 更新现有分类的信息
-   * - 验证分类名称的唯一性（排除当前分类）
-   * - 支持更新名称、描述、排序值等
+   * - 支持更新名称、描述、排序等
+   * - 数据验证由后端处理
    * 
    * @param {number} id 分类ID
    * @param {Object} categoryData 分类数据
    * @param {string} categoryData.name 分类名称
    * @param {string} categoryData.description 分类描述，可选
-   * @param {number} categoryData.sortOrder 排序值，可选
+   * @param {number} categoryData.sort 排序值，可选
    * @returns {Promise} API响应，包含更新结果
    */
   static updateCategory(id, categoryData) {
@@ -206,9 +205,9 @@ class CategoryApiService {
    * 删除分类
    * 
    * 功能说明：
-   * - 删除指定的博客分类
-   * - 如果分类下有文章，则不允许删除
-   * - 执行物理删除操作
+   * - 删除指定的分类
+   * - 删除前检查是否有关联的博客
+   * - 删除后无法恢复
    * 
    * @param {number} id 分类ID
    * @returns {Promise} API响应，包含删除结果
@@ -220,23 +219,45 @@ class CategoryApiService {
 
 /**
  * 用户API服务类
- * 提供用户信息查询功能
+ * 提供用户信息的查询功能
  */
 class UserApiService {
   /**
    * 获取用户信息
    * 
    * 功能说明：
-   * - 根据用户ID获取用户的基本信息
-   * - 包含用户名、昵称、头像等
-   * - 用于显示博客作者信息
+   * - 根据用户ID获取用户基本信息
+   * - 不包含敏感信息如密码
+   * - 用于显示作者信息
    * 
    * @param {number} id 用户ID
-   * @returns {Promise} API响应，包含用户详细信息
+   * @returns {Promise} API响应，包含用户信息
    */
   static getUserInfo(id) {
     return service.get(`/api/user/${id}`)
   }
 }
 
+// 统一导出API服务
+export const blogApi = {
+  // 博客相关
+  getBlogList: BlogApiService.getBlogList,
+  getBlogDetail: BlogApiService.getBlogDetail,
+  createBlog: BlogApiService.createBlog,
+  updateBlog: BlogApiService.updateBlog,
+  deleteBlog: BlogApiService.deleteBlog,
+  updateBlogStatus: BlogApiService.updateBlogStatus,
+  
+  // 分类相关
+  getCategoryList: CategoryApiService.getCategoryList,
+  getCategoryDetail: CategoryApiService.getCategoryDetail,
+  createCategory: CategoryApiService.createCategory,
+  updateCategory: CategoryApiService.updateCategory,
+  deleteCategory: CategoryApiService.deleteCategory,
+  
+  // 用户相关
+  getUserInfo: UserApiService.getUserInfo
+}
+
+// 兼容性导出
 export { BlogApiService, CategoryApiService, UserApiService } 
