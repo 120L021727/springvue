@@ -74,14 +74,7 @@
                 <el-icon><User /></el-icon>
                 <span>个人信息</span>
               </el-dropdown-item>
-              <el-dropdown-item 
-                v-if="isLoggedIn()" 
-                command="category-management"
-                :disabled="!isLoggedIn()"
-              >
-                <el-icon><Document /></el-icon>
-                <span>分类管理</span>
-              </el-dropdown-item>
+
               <el-dropdown-item 
                 v-if="isLoggedIn()" 
                 command="logout"
@@ -206,11 +199,7 @@ const handleUserCommand = (command) => {
         router.push('/profile')
       }
       break
-    case 'category-management':
-      if (isLoggedIn()) {
-        router.push('/category-management')
-      }
-      break
+
   }
 }
 </script>
