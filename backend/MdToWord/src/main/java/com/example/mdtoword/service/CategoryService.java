@@ -9,7 +9,7 @@ import java.util.Map;
  * 提供分类管理的业务逻辑方法
  * 
  * @author 坤坤
- * @since 2024-01-01
+ * @since 2025-08-09
  */
 public interface CategoryService {
     

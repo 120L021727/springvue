@@ -15,7 +15,7 @@ import java.util.UUID;
  * 处理头像文件的上传和存储
  * 
  * @author 坤坤
- * @since 2024-01-01
+ * @since 2025-08-09
  */
 @Component
 public class FileUploadUtil {

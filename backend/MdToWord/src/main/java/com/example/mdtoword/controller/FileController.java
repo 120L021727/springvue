@@ -3,6 +3,7 @@ package com.example.mdtoword.controller;
 import com.example.mdtoword.pojo.Result;
 import com.example.mdtoword.service.UserService;
 import com.example.mdtoword.util.FileUploadUtil;
+import com.example.mdtoword.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.io.Resource;
@@ -10,8 +11,6 @@ import org.springframework.core.io.UrlResource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -36,6 +35,9 @@ public class FileController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private SecurityUtil securityUtil;
 
     @Value("${file.upload.path:./uploads/avatars/}")
     private String uploadPath;
@@ -47,12 +49,8 @@ public class FileController {
     public ResponseEntity<Result<String>> uploadAvatar(@RequestParam("file") MultipartFile file) {
         try {
             // 1. 获取当前登录用户
-            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-            if (authentication == null || !authentication.isAuthenticated()) {
-                return ResponseEntity.status(401)
-                    .body(Result.unauthorized("用户未登录"));
-            }
-
+            securityUtil.getCurrentUser(); // 验证用户已登录
+            
             // 2. 上传文件
             String avatarUrl = fileUploadUtil.uploadAvatar(file);
 

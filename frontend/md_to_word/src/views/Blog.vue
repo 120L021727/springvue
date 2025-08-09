@@ -21,10 +21,10 @@
           <div class="filter-left">
             <!-- 状态筛选 -->
             <el-select 
-              v-model="selectedStatus" 
+              v-model="filters.status" 
               placeholder="文章状态" 
               clearable
-              @change="handleStatusChange"
+              @change="handleFilterChange"
               style="width: 120px; margin-right: 15px;"
             >
               <el-option label="全部文章" value="" />
@@ -34,10 +34,10 @@
 
             <!-- 分类筛选 -->
             <el-select 
-              v-model="selectedCategory" 
+              v-model="filters.categoryId" 
               placeholder="选择分类" 
               clearable
-              @change="handleCategoryChange"
+              @change="handleFilterChange"
               style="width: 200px; margin-right: 15px;"
             >
               <el-option label="全部分类" value="" />
@@ -48,23 +48,12 @@
                 :value="category.id"
               />
             </el-select>
-
-            <!-- 排序方式 -->
-            <el-select 
-              v-model="sortBy" 
-              placeholder="排序方式"
-              @change="handleSortChange"
-              style="width: 150px;"
-            >
-              <el-option label="最新发布" value="latest" />
-              <el-option label="最早发布" value="earliest" />
-            </el-select>
           </div>
 
           <div class="filter-right">
             <!-- 搜索框 -->
             <el-input
-              v-model="searchKeyword"
+              v-model="filters.keyword"
               placeholder="搜索博客标题..."
               clearable
               style="width: 250px; margin-right: 15px;"
@@ -126,16 +115,16 @@
                     <!-- 状态标识 -->
                     <el-tag 
                       v-if="blog.status === 'draft'" 
-                      type="warning" 
+                      :type="getStatusTagType(blog.status)" 
                       size="small"
                       class="status-tag"
                     >
-                      草稿
+                      {{ getStatusText(blog.status) }}
                     </el-tag>
                   </div>
                   <div class="blog-meta">
-                    <span class="blog-category" v-if="getCategoryName(blog.categoryId)">
-                      {{ getCategoryName(blog.categoryId) }}
+                    <span class="blog-category" v-if="getCategoryName(blog.categoryId, categories)">
+                      {{ getCategoryName(blog.categoryId, categories) }}
                     </span>
                     <span class="blog-date">{{ formatDate(blog.createTime) }}</span>
                   </div>
@@ -148,7 +137,7 @@
                 <div class="blog-footer">
                   <div class="blog-author">
                     <el-avatar :size="24" icon="UserFilled" />
-                    <span>{{ getAuthorName(blog.authorId) }}</span>
+                    <span>{{ getAuthorName(blog.authorId, authors) }}</span>
                   </div>
                   
                   <!-- 作者操作按钮 -->
@@ -199,8 +188,8 @@
         <!-- 分页组件 -->
         <div class="pagination-container" v-if="total > 0">
           <el-pagination
-            v-model:current-page="currentPage"
-            v-model:page-size="pageSize"
+            v-model:current-page="pagination.page"
+            v-model:page-size="pagination.size"
             :page-sizes="[10, 20, 50, 100]"
             :total="total"
             layout="total, sizes, prev, pager, next, jumper"
@@ -220,7 +209,16 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Search, Edit, Refresh } from '@element-plus/icons-vue'
 import TopNavbar from '@/components/TopNavbar.vue'
 import { useAuth } from '@/composables/useAuth'
-import service from '@/utils/request'
+import { BlogApiService, CategoryApiService, UserApiService } from '@/utils/blogApi'
+import { 
+  formatDate, 
+  getExcerpt, 
+  getCategoryName, 
+  getAuthorName, 
+  buildBlogQueryParams,
+  getStatusText,
+  getStatusTagType
+} from '@/utils/blogUtils'
 
 const router = useRouter()
 const { isLoggedIn, getCurrentUserId } = useAuth()
@@ -230,13 +228,20 @@ const loading = ref(false)
 const blogs = ref([])
 const categories = ref([])
 const total = ref(0)
-const currentPage = ref(1)
-const pageSize = ref(10)
-const selectedCategory = ref('')
-const selectedStatus = ref('')
-const sortBy = ref('latest')
-const searchKeyword = ref('')
-const authors = ref({}) // 存储作者信息的缓存
+const authors = ref({})
+
+// 筛选条件
+const filters = ref({
+  status: '',
+  categoryId: '',
+  keyword: ''
+})
+
+// 分页信息
+const pagination = ref({
+  page: 1,
+  size: 10
+})
 
 // 计算属性
 const isAuthor = computed(() => {
@@ -254,7 +259,7 @@ onMounted(() => {
 // 方法定义
 const loadCategories = async () => {
   try {
-    const response = await service.get('/api/category/list')
+    const response = await CategoryApiService.getCategoryList()
     if (response.data.success) {
       categories.value = response.data.data
     }
@@ -266,27 +271,12 @@ const loadCategories = async () => {
 const loadBlogs = async () => {
   loading.value = true
   try {
-    const params = {
-      page: currentPage.value,
-      size: pageSize.value
-    }
+    const params = buildBlogQueryParams({
+      ...filters.value,
+      ...pagination.value
+    })
     
-    // 添加分类筛选
-    if (selectedCategory.value !== '' && selectedCategory.value != null) {
-      params.categoryId = selectedCategory.value
-    }
-    
-    // 添加状态筛选
-    if (selectedStatus.value !== '' && selectedStatus.value != null) {
-      params.status = selectedStatus.value
-    }
-    
-    // 添加关键词搜索
-    if (searchKeyword.value && searchKeyword.value.trim()) {
-      params.keyword = searchKeyword.value.trim()
-    }
-    
-    const response = await service.get('/api/blog/list', { params })
+    const response = await BlogApiService.getBlogList(params)
     if (response.data.success) {
       blogs.value = response.data.data.records
       total.value = response.data.data.total
@@ -311,40 +301,29 @@ const loadAuthorsInfo = async () => {
   
   for (const authorId of uncachedIds) {
     try {
-      const response = await service.get(`/api/user/${authorId}`)
+      const response = await UserApiService.getUserInfo(authorId)
       if (response.data.success) {
         authors.value[authorId] = response.data.data
       }
     } catch (error) {
       console.warn(`用户ID ${authorId} 不存在或无法访问`)
-      // 不抛出错误，继续处理其他用户
     }
   }
 }
 
-const handleCategoryChange = () => {
-  currentPage.value = 1
-  loadBlogs()
-}
-
-const handleStatusChange = () => {
-  currentPage.value = 1
-  loadBlogs()
-}
-
-const handleSortChange = () => {
-  currentPage.value = 1
+const handleFilterChange = () => {
+  pagination.value.page = 1
   loadBlogs()
 }
 
 const handleSizeChange = (newSize) => {
-  pageSize.value = newSize
-  currentPage.value = 1
+  pagination.value.size = newSize
+  pagination.value.page = 1
   loadBlogs()
 }
 
 const handleCurrentChange = (newPage) => {
-  currentPage.value = newPage
+  pagination.value.page = newPage
   loadBlogs()
 }
 
@@ -368,7 +347,7 @@ const deleteBlog = async (blogId) => {
       }
     )
     
-    const response = await service.delete(`/api/blog/${blogId}`)
+    const response = await BlogApiService.deleteBlog(blogId)
     if (response.data.success) {
       ElMessage.success('博客删除成功')
       loadBlogs()
@@ -381,7 +360,6 @@ const deleteBlog = async (blogId) => {
   }
 }
 
-// 发布草稿
 const publishDraft = async (blogId) => {
   try {
     await ElMessageBox.confirm(
@@ -394,7 +372,7 @@ const publishDraft = async (blogId) => {
       }
     )
     
-    const response = await service.patch(`/api/blog/${blogId}/status?status=published`)
+    const response = await BlogApiService.updateBlogStatus(blogId, 'published')
     
     if (response.data.success) {
       ElMessage.success('草稿发布成功')
@@ -413,40 +391,13 @@ const goToCreateBlog = () => {
 }
 
 const resetFilters = () => {
-  selectedCategory.value = ''
-  selectedStatus.value = ''
-  searchKeyword.value = ''
-  currentPage.value = 1
+  filters.value = {
+    status: '',
+    categoryId: '',
+    keyword: ''
+  }
+  pagination.value.page = 1
   loadBlogs()
-}
-
-const getCategoryName = (categoryId) => {
-  if (!categoryId) return ''
-  const category = categories.value.find(c => c.id === categoryId)
-  return category ? category.name : ''
-}
-
-const getExcerpt = (content) => {
-  if (!content) return ''
-  // 移除Markdown标记，获取纯文本
-  const text = content.replace(/[#*`]/g, '').replace(/\n/g, ' ')
-  return text.length > 100 ? text.substring(0, 100) + '...' : text
-}
-
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric'
-  })
-}
-
-const getAuthorName = (authorId) => {
-  if (!authorId) return ''
-  const author = authors.value[authorId]
-  return author ? author.nickname : `用户${authorId}`
 }
 </script>
 
@@ -499,7 +450,6 @@ const getAuthorName = (authorId) => {
   box-shadow: 0 8px 25px rgba(0, 0, 0, 0.15);
 }
 
-/* 草稿卡片特殊样式 */
 .draft-card {
   border-left: 4px solid #e6a23c;
   background: rgba(230, 162, 60, 0.05);
@@ -576,7 +526,6 @@ const getAuthorName = (authorId) => {
   margin-top: 40px;
 }
 
-/* 响应式设计 */
 @media (max-width: 768px) {
   .filter-section {
     flex-direction: column;
@@ -600,4 +549,4 @@ const getAuthorName = (authorId) => {
     font-size: 1.2rem;
   }
 }
-</style> 
+</style>

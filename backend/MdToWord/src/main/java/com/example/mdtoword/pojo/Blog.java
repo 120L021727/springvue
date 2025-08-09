@@ -12,7 +12,7 @@ import java.time.LocalDateTime;
  * 用于存储博客文章的基本信息
  * 
  * @author 坤坤
- * @since 2024-01-01
+ * @since 2025-08-09
  */
 @Data
 @TableName("tb_blog") // 指定表名

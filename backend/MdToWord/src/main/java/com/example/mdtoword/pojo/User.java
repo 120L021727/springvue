@@ -14,7 +14,7 @@ import java.time.LocalDateTime;
  * 用于存储用户基本信息和认证数据
  * 
  * @author 坤坤
- * @since 2024-01-01
+ * @since 2025-08-09
  */
 @Data
 @TableName("tb_user") // 指定表名

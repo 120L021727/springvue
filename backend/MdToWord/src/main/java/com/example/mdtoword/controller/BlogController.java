@@ -7,12 +7,11 @@ import com.example.mdtoword.pojo.Result;
 import com.example.mdtoword.pojo.User;
 import com.example.mdtoword.service.BlogService;
 import com.example.mdtoword.service.UserService;
+import com.example.mdtoword.util.SecurityUtil;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,7 +25,7 @@ import java.util.List;
  * 提供博客管理的RESTful API接口
  * 
  * @author 坤坤
- * @since 2024-01-01
+ * @since 2025-08-09
  */
 @RestController
 @RequestMapping("/api/blog")
@@ -41,6 +40,9 @@ public class BlogController {
     @Autowired
     private UserService userService;
     
+    @Autowired
+    private SecurityUtil securityUtil;
+    
     /**
      * 分页查询博客列表（公开接口）
      * 
@@ -50,6 +52,7 @@ public class BlogController {
      * 3. 支持状态筛选和分类筛选
      * 4. 返回统一的Result格式
      * 5. 参数验证确保数据有效性
+     * 6. 权限过滤：未登录只能看已发布，已登录可以看自己的所有文章+别人的已发布文章
      * 
      * @param page 页码，默认1
      * @param size 每页大小，默认10，最大100
@@ -75,15 +78,17 @@ public class BlogController {
         }
         
         try {
-            Page<Blog> result;
-            
-            // 如果指定了状态且不为空，则查询指定状态的博客
-            if (status != null && !status.trim().isEmpty()) {
-                result = blogService.listWithFilters(page, size, status, categoryId, keyword);
-            } else {
-                // 否则查询所有状态的博客（全部文章）
-                result = blogService.listWithFilters(page, size, null, categoryId, keyword);
+            // 获取当前登录用户ID（可能为null表示未登录）
+            Integer currentUserId = null;
+            try {
+                currentUserId = securityUtil.getCurrentUserId();
+            } catch (BusinessException e) {
+                // 用户未登录，currentUserId保持为null
+                logger.debug("用户未登录，只能查看已发布的文章");
             }
+            
+            // 使用统一的查询方法，传入权限过滤参数
+            Page<Blog> result = blogService.list(page, size, status, categoryId, keyword, null, currentUserId);
             
             logger.info("查询成功，总记录数: {}", result.getTotal());
             return ResponseEntity.ok(Result.success(result));
@@ -116,17 +121,9 @@ public class BlogController {
         
         if (size > 100) size = 100;
         
-        Page<Blog> result;
-        if (status != null && !status.trim().isEmpty()) {
-            // 按状态查询（这里需要扩展Service方法）
-            List<Blog> blogs = blogService.listByStatus(status);
-            result = new Page<>(page, size);
-            // 这里简化处理，实际应该实现分页
-            result.setRecords(blogs);
-            result.setTotal(blogs.size());
-        } else {
-            result = blogService.list(page, size);
-        }
+        // 管理员接口需要登录，传入当前用户ID进行权限过滤
+        Integer currentUserId = securityUtil.getCurrentUserId();
+        Page<Blog> result = blogService.list(page, size, status, null, null, null, currentUserId);
         
         return ResponseEntity.ok(Result.success(result));
     }
@@ -138,6 +135,7 @@ public class BlogController {
      * 1. 验证分类ID有效性
      * 2. 只返回已发布的博客
      * 3. 按创建时间降序排列
+     * 4. 权限过滤：未登录只能看已发布，已登录可以看自己的所有文章+别人的已发布文章
      * 
      * @param categoryId 分类ID
      * @param page 页码
@@ -155,7 +153,16 @@ public class BlogController {
         if (size > 100) size = 100;
         
         try {
-            Page<Blog> result = blogService.listByCategory(categoryId, page, size);
+            // 获取当前登录用户ID（可能为null表示未登录）
+            Integer currentUserId = null;
+            try {
+                currentUserId = securityUtil.getCurrentUserId();
+            } catch (BusinessException e) {
+                // 用户未登录，currentUserId保持为null
+                logger.debug("用户未登录，只能查看已发布的文章");
+            }
+            
+            Page<Blog> result = blogService.list(page, size, "published", categoryId, null, null, currentUserId);
             return ResponseEntity.ok(Result.success(result));
         } catch (BusinessException e) {
             logger.warn("按分类查询博客失败: {}", e.getMessage());
@@ -168,9 +175,8 @@ public class BlogController {
      * 
      * 业务逻辑：
      * 1. 验证博客存在性
-     * 2. 公开接口只能访问已发布的博客
-     * 3. 作者可以查看自己的草稿
-     * 4. 返回完整的博客信息
+     * 2. 权限验证：未登录只能看已发布，已登录可以看自己的所有文章+别人的已发布文章
+     * 3. 返回完整的博客信息
      * 
      * @param id 博客ID
      * @return 博客详情
@@ -180,20 +186,18 @@ public class BlogController {
         logger.info("获取博客详情，ID: {}", id);
         
         try {
-            Blog blog = blogService.getById(id);
-            if (blog == null) {
-                return ResponseEntity.notFound().build();
+            // 获取当前登录用户ID（可能为null表示未登录）
+            Integer currentUserId = null;
+            try {
+                currentUserId = securityUtil.getCurrentUserId();
+            } catch (BusinessException e) {
+                // 用户未登录，currentUserId保持为null
+                logger.debug("用户未登录，只能查看已发布的文章");
             }
             
-            // 检查权限：只有作者可以查看草稿，其他人只能查看已发布的博客
-            if (!"published".equals(blog.getStatus())) {
-                // 获取当前用户ID
-                Integer currentUserId = getCurrentUserId();
-                
-                // 如果不是作者，则拒绝访问
-                if (!blogService.isAuthor(id, currentUserId)) {
-                    return ResponseEntity.notFound().build();
-                }
+            Blog blog = blogService.getById(id, currentUserId);
+            if (blog == null) {
+                return ResponseEntity.notFound().build();
             }
             
             return ResponseEntity.ok(Result.success(blog));
@@ -219,8 +223,8 @@ public class BlogController {
         logger.info("创建博客，标题: {}", blog.getTitle());
         
         try {
-            // 获取当前登录用户ID（这里简化处理）
-            Integer currentUserId = getCurrentUserId();
+            // 获取当前登录用户ID
+            Integer currentUserId = securityUtil.getCurrentUserId();
             blog.setAuthorId(currentUserId);
             
             boolean success = blogService.create(blog);
@@ -257,7 +261,7 @@ public class BlogController {
         
         try {
             // 权限检查：只有作者可以更新
-            Integer currentUserId = getCurrentUserId();
+            Integer currentUserId = securityUtil.getCurrentUserId();
             if (!blogService.isAuthor(id, currentUserId)) {
                 return ResponseEntity.status(403)
                     .body(Result.forbidden("您没有权限更新此博客"));
@@ -296,7 +300,7 @@ public class BlogController {
         
         try {
             // 权限检查：只有作者可以删除
-            Integer currentUserId = getCurrentUserId();
+            Integer currentUserId = securityUtil.getCurrentUserId();
             if (!blogService.isAuthor(id, currentUserId)) {
                 return ResponseEntity.status(403)
                     .body(Result.forbidden("您没有权限删除此博客"));
@@ -335,7 +339,7 @@ public class BlogController {
         
         try {
             // 权限检查
-            Integer currentUserId = getCurrentUserId();
+            Integer currentUserId = securityUtil.getCurrentUserId();
             if (!blogService.isAuthor(id, currentUserId)) {
                 return ResponseEntity.status(403)
                     .body(Result.forbidden("您没有权限修改此博客状态"));
@@ -352,32 +356,5 @@ public class BlogController {
             logger.warn("更新博客状态失败，ID: {}, 错误: {}", id, e.getMessage());
             return ResponseEntity.badRequest().body(Result.error(400, e.getMessage()));
         }
-    }
-    
-    /**
-     * 获取当前登录用户ID
-     * 
-     * 实现说明：
-     * 1. 从Spring Security上下文获取认证信息
-     * 2. 根据用户名查询用户表获取用户ID
-     * 3. 确保返回正确的用户ID
-     * 
-     * @return 用户ID
-     */
-    private Integer getCurrentUserId() {
-        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication != null && authentication.isAuthenticated()) {
-            String username = authentication.getName();
-            
-            // 根据用户名查询用户信息
-            User user = userService.findByUserName(username);
-            if (user != null) {
-                return user.getId();
-            } else {
-                logger.error("用户不存在: {}", username);
-                throw new BusinessException("用户不存在");
-            }
-        }
-        throw new BusinessException("用户未登录");
     }
 }

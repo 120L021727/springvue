@@ -15,7 +15,7 @@ import org.springframework.stereotype.Service;
  * 处理用户相关的业务逻辑
  * 
  * @author 坤坤
- * @since 2024-01-01
+ * @since 2025-08-09
  */
 @Service
 public class UserServiceImpl implements UserService {
