@@ -1,9 +1,10 @@
 <script setup>
-/**
- * 应用程序根组件
- * 作为整个应用的容器，通过router-view渲染路由对应的页面组件
- * 这里不直接导入组件，而是通过Vue Router进行页面切换
- */
+import { onMounted } from 'vue'
+import { useAuth } from '@/composables/useAuth'
+
+// 全局初始化用户状态：仅一次，避免各页面重复初始化
+const { initUserState } = useAuth()
+onMounted(() => initUserState())
 </script>
 
 <template>

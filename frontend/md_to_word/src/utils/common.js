@@ -149,3 +149,27 @@ export function removeUrlParam(name) {
   url.searchParams.delete(name)
   window.history.replaceState({}, '', url)
 } 
+
+/**
+ * 将相对资源路径转换为完整可访问URL
+ * - 已包含协议和主机名的路径将原样返回
+ * - 相对路径会自动拼接后端基础地址（默认 http://localhost:8080）
+ * @param {string} path 相对或绝对路径
+ * @param {string} base 基础地址，可覆盖默认
+ * @returns {string} 完整URL
+ */
+export function getFullUrl(path, base = 'http://localhost:8080') {
+  if (!path) return ''
+  if (path.startsWith('http')) return path
+  return `${base}${path}`
+}
+
+/**
+ * 获取用户显示名：优先昵称，其次用户名
+ * @param {{nickname?: string, username?: string}|null} user 用户对象
+ * @returns {string} 显示名
+ */
+export function getDisplayName(user) {
+  if (!user) return '用户'
+  return user.nickname || user.username || '用户'
+}

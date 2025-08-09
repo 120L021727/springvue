@@ -136,12 +136,8 @@ onMounted(() => {
 /**
  * 计算头像URL，确保是完整的URL
  */
-const avatarUrl = computed(() => {
-  const userPic = userStore.user?.userPic
-  if (!userPic) return ''
-  if (userPic.startsWith('http')) return userPic
-  return `http://localhost:8080${userPic}`
-})
+import { getFullUrl } from '@/utils/common'
+const avatarUrl = computed(() => getFullUrl(userStore.user?.userPic))
 
 // 根据当前路由确定激活的菜单项
 const activeIndex = computed(() => {

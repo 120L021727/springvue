@@ -126,12 +126,16 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Share } from '@element-plus/icons-vue'
 import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
+import { blogApi } from '@/utils/blogApi'
+import { formatDate } from '@/utils/blogUtils'
+import { useAuthorCache } from '@/composables/useAuthorCache'
 import service from '@/utils/request'
 import { marked } from 'marked'
 
 const route = useRoute()
 const router = useRouter()
 const { isLoggedIn, getCurrentUserId } = useAuth()
+const { ensureAuthors, getAuthorName } = useAuthorCache()
 
 // 响应式数据
 const loading = ref(true)
@@ -159,7 +163,7 @@ onMounted(() => {
 // 方法定义
 const loadCategories = async () => {
   try {
-    const response = await service.get('/api/category/list')
+    const response = await blogApi.getCategoryList()
     if (response.data.success) {
       categories.value = response.data.data
     }
@@ -177,11 +181,11 @@ const loadBlogDetail = async () => {
   
   loading.value = true
   try {
-    const response = await service.get(`/api/blog/${blogId}`)
+    const response = await blogApi.getBlogDetail(blogId)
     if (response.data.success) {
       blog.value = response.data.data
       // 加载作者信息
-      await loadAuthorInfo(blog.value.authorId)
+      await ensureAuthors([blog.value.authorId])
     } else {
       ElMessage.error('博客不存在')
     }
@@ -193,17 +197,7 @@ const loadBlogDetail = async () => {
   }
 }
 
-const loadAuthorInfo = async (authorId) => {
-  try {
-    const response = await service.get(`/api/user/${authorId}`)
-    if (response.data.success) {
-      author.value = response.data.data
-    }
-  } catch (error) {
-    console.warn(`用户ID ${authorId} 不存在或无法访问`)
-    // 不抛出错误，继续显示用户ID
-  }
-}
+const loadAuthorInfo = async () => {}
 
 const goBack = () => {
   router.push('/blog')
@@ -280,17 +274,7 @@ const getCategoryName = (categoryId) => {
   return category ? category.name : ''
 }
 
-const formatDate = (dateString) => {
-  if (!dateString) return ''
-  const date = new Date(dateString)
-  return date.toLocaleDateString('zh-CN', {
-    year: 'numeric',
-    month: 'long',
-    day: 'numeric',
-    hour: '2-digit',
-    minute: '2-digit'
-  })
-}
+// 统一使用 blogUtils.formatDate
 </script>
 
 <style scoped>

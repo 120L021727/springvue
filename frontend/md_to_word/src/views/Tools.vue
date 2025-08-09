@@ -67,10 +67,7 @@ import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()
-const { getUsername, autoInitUser } = useAuth()
-
-// 自动初始化用户状态
-autoInitUser()
+const { getUsername } = useAuth()
 </script>
 
 <style scoped>

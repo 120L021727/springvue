@@ -196,6 +196,7 @@ import { Search, Refresh, Edit } from '@element-plus/icons-vue'
 import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 import { blogApi } from '@/utils/blogApi'
+import { useAuthorCache } from '@/composables/useAuthorCache'
 import { formatDate, getExcerpt, getCategoryName } from '@/utils/blogUtils'
 
 const router = useRouter()
@@ -207,8 +208,8 @@ const blogs = ref([])
 const categories = ref([])
 const total = ref(0)
 
-// 作者信息缓存
-const authorCache = ref(new Map())
+// 作者信息缓存（复用组合式，跨页面共享）
+const { ensureAuthors, getAuthorName } = useAuthorCache()
 
 // 筛选条件
 const filters = reactive({
@@ -241,7 +242,7 @@ const loadBlogs = async () => {
       total.value = response.data.data.total
       
       // 加载作者信息
-      await loadAuthorsInfo()
+      await ensureAuthors(blogs.value.map(b => b.authorId))
     }
   } catch (error) {
     console.error('加载博客列表失败:', error)
@@ -263,34 +264,7 @@ const loadCategories = async () => {
   }
 }
 
-// 加载作者信息（按需加载并缓存）
-const loadAuthorsInfo = async () => {
-  // 获取所有不重复的作者ID
-  const authorIds = [...new Set(blogs.value.map(blog => blog.authorId))]
-  
-  // 只加载还没有缓存的作者信息
-  const uncachedIds = authorIds.filter(id => !authorCache.value.has(id))
-  
-  for (const authorId of uncachedIds) {
-    try {
-      const response = await blogApi.getUserInfo(authorId)
-      if (response.data.success) {
-        authorCache.value.set(authorId, response.data.data)
-      }
-    } catch (error) {
-      console.warn(`用户ID ${authorId} 不存在或无法访问`)
-      // 设置默认值，避免重复请求
-      authorCache.value.set(authorId, { id: authorId, nickname: `用户${authorId}` })
-    }
-  }
-}
-
-// 获取作者名称
-const getAuthorName = (authorId) => {
-  if (!authorId) return ''
-  const author = authorCache.value.get(authorId)
-  return author ? author.nickname : `用户${authorId}`
-}
+// 作者名称由组合式提供
 
 // 筛选条件变化处理
 const handleFilterChange = () => {
