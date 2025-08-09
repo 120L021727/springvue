@@ -1,5 +1,5 @@
 <template>
-  <div class="top-navbar">
+  <div class="top-navbar" :class="themeClass">
     <div class="navbar-container">
       <!-- 左侧品牌标签 -->
       <div class="brand-section">
@@ -11,9 +11,9 @@
         <el-menu
           :default-active="activeIndex"
           mode="horizontal"
-          background-color="transparent"
-          text-color="rgba(255, 255, 255, 0.9)"
-          active-text-color="#ffffff"
+          :background-color="dark ? 'transparent' : 'rgba(255, 255, 255, 0.95)'"
+          :text-color="dark ? 'rgba(255, 255, 255, 0.9)' : 'rgba(0, 0, 0, 0.75)'"
+          :active-text-color="dark ? '#ffffff' : '#1976d2'"
           class="nav-menu"
           :collapse="false"
           @select="handleMenuSelect"
@@ -100,7 +100,7 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import { useAuth } from '@/composables/useAuth'
@@ -121,13 +121,17 @@ const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
 
-// 使用useAuth composable来自动初始化用户状态
-const { autoInitUser, isLoggedIn, getUsername } = useAuth()
-
-// 自动初始化用户状态
-autoInitUser()
+const { isLoggedIn, getUsername } = useAuth()
 
 const searchKeyword = ref('')
+
+// 深浅主题：根据是否存在 .page-background 判断（背景页为深色主题）
+const dark = ref(false)
+const themeClass = computed(() => (dark.value ? 'transparent' : 'solid'))
+onMounted(() => {
+  // 如果页面根有 .page-background 则走深色主题
+  dark.value = !!document.querySelector('.page-background')
+})
 
 /**
  * 计算头像URL，确保是完整的URL

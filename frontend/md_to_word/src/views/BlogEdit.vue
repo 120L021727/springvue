@@ -1,13 +1,5 @@
 <template>
-  <div class="page-background">
-    <!-- 顶部导航栏 -->
-    <TopNavbar />
-    
-    <!-- 背景 -->
-    <div class="background-image"></div>
-    <div class="background-overlay"></div>
-    
-    <!-- 主要内容区域 -->
+  <LayoutBase>
     <div class="main-content">
       <div class="blog-edit-container">
         <!-- 页面标题 -->
@@ -135,7 +127,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </LayoutBase>
 
   <!-- 创建分类对话框 -->
   <el-dialog
@@ -190,7 +182,7 @@
 import { ref, onMounted, computed, nextTick } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import TopNavbar from '@/components/TopNavbar.vue'
+import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 import service from '@/utils/request'
 import { marked } from 'marked'

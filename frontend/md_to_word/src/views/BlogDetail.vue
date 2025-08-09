@@ -1,13 +1,5 @@
 <template>
-  <div class="page-background">
-    <!-- 顶部导航栏 -->
-    <TopNavbar />
-    
-    <!-- 背景 -->
-    <div class="background-image"></div>
-    <div class="background-overlay"></div>
-    
-    <!-- 主要内容区域 -->
+  <LayoutBase>
     <div class="main-content">
       <div class="blog-detail-container">
         <div v-if="loading" class="loading-container">
@@ -124,7 +116,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </LayoutBase>
 </template>
 
 <script setup>
@@ -132,7 +124,7 @@ import { ref, onMounted, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Share } from '@element-plus/icons-vue'
-import TopNavbar from '@/components/TopNavbar.vue'
+import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 import service from '@/utils/request'
 import { marked } from 'marked'

@@ -1,13 +1,5 @@
 <template>
-  <div class="page-background">
-    <!-- 顶部导航栏 -->
-    <TopNavbar />
-    
-    <!-- 背景 -->
-    <div class="background-image"></div>
-    <div class="background-overlay"></div>
-    
-    <!-- 主要内容区域 -->
+  <LayoutBase>
     <div class="main-content">
       <div class="tools-container">
         <h1 class="welcome-title">坤坤的工具箱</h1>
@@ -65,13 +57,13 @@
         </div>
       </div>
     </div>
-  </div>
+  </LayoutBase>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router'
 import { Document, Picture, Link, Calendar } from '@element-plus/icons-vue'
-import TopNavbar from '@/components/TopNavbar.vue'
+import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()

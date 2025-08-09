@@ -1,13 +1,5 @@
 <template>
-  <div class="page-background">
-    <!-- 顶部导航栏 -->
-    <TopNavbar />
-    
-    <!-- 背景 -->
-    <div class="background-image"></div>
-    <div class="background-overlay"></div>
-    
-    <!-- 主要内容区域 -->
+  <LayoutBase>
     <div class="main-content">
       <div class="responsive-container">
         <div class="about-content glass-effect">
@@ -76,7 +68,7 @@
         </div>
       </div>
     </div>
-  </div>
+  </LayoutBase>
 </template>
 
 <script setup>
@@ -85,7 +77,7 @@
  * 展示网站信息、技术栈、联系方式等
  */
 
-import TopNavbar from '@/components/TopNavbar.vue'
+import LayoutBase from '@/components/LayoutBase.vue'
 </script>
 
 <style scoped>

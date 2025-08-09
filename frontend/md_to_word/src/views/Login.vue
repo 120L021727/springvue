@@ -1,15 +1,7 @@
 <template>
-  <div class="page-background">
-    <!-- 顶部导航栏 -->
-    <TopNavbar />
-    
-    <!-- 背景 -->
-    <div class="background-image"></div>
-    <div class="background-overlay"></div>
-    
-    <!-- 登录框 -->
-    <div class="login-container">
-      <el-card class="glass-effect" shadow="hover">
+  <LayoutBase>
+    <template #center>
+      <el-card class="glass-effect" shadow="hover" style="width: 100%; max-width: 480px; margin: 0 20px;">
         <template #header>
           <div class="card-header">
             <h2>{{ isLogin ? '用户登录' : '用户注册' }}</h2>
@@ -134,8 +126,8 @@
           </el-button>
         </div>
       </el-card>
-    </div>
-  </div>
+    </template>
+  </LayoutBase>
 </template>
 
 <script setup>
@@ -149,7 +141,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
 import axios from 'axios'
-import TopNavbar from '@/components/TopNavbar.vue'
+import LayoutBase from '@/components/LayoutBase.vue'
 
 const router = useRouter()
 const userStore = useUserStore()
@@ -347,17 +339,7 @@ const handleRegister = async () => {
  * 登录容器样式
  * 绝对定位居中，为顶部导航栏留出空间
  */
-.login-container {
-  position: absolute;
-  top: 50%;
-  left: 50%;
-  transform: translate(-50%, -50%);
-  width: 100%;
-  max-width: 480px;
-  padding: 0 20px;
-  z-index: 10;
-  margin-top: 30px; /* 为顶部导航栏留出空间 */
-}
+/* 居中由 LayoutBase 的 layout-center 提供，这里不再设置定位样式 */
 
 /**
  * 卡片头部样式

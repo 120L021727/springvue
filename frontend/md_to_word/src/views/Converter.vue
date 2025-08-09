@@ -1,9 +1,5 @@
 <template>
-  <div class="converter-page">
-    <!-- 顶部导航栏 -->
-    <TopNavbar />
-    
-    <!-- 主要内容区域 -->
+  <LayoutBase :withBackground="false">
     <div class="main-content">
       <div style="padding: 60px; max-width: 1600px; margin: 0 auto;">
         <el-card shadow="hover">
@@ -53,7 +49,7 @@
         </el-card>
       </div>
     </div>
-  </div>
+  </LayoutBase>
 </template>
 
 <script setup>
@@ -62,7 +58,7 @@ import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import service from '@/utils/request'
 import mammoth from 'mammoth'
-import TopNavbar from '@/components/TopNavbar.vue'
+import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 
 const router = useRouter()

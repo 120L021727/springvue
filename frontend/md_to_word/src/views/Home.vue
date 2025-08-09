@@ -1,13 +1,5 @@
 <template>
-  <div class="page-background">
-    <!-- 顶部导航栏 -->
-    <TopNavbar />
-    
-    <!-- 背景 -->
-    <div class="background-image"></div>
-    <div class="background-overlay"></div>
-    
-    <!-- 主要内容区域 -->
+  <LayoutBase>
     <div class="main-content">
       <!-- 英雄区域 -->
       <section class="hero-section">
@@ -81,7 +73,7 @@
         </div>
       </section>
     </div>
-  </div>
+  </LayoutBase>
 </template>
 
 <script setup>
@@ -93,7 +85,7 @@
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { Tools, Document, User } from '@element-plus/icons-vue'
-import TopNavbar from '@/components/TopNavbar.vue'
+import LayoutBase from '@/components/LayoutBase.vue'
 
 const router = useRouter()
 
