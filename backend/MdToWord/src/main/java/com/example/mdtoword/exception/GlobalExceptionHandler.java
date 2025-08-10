@@ -1,6 +1,5 @@
-package com.example.mdtoword.controller;
+package com.example.mdtoword.exception;
 
-import com.example.mdtoword.exception.BusinessException;
 import com.example.mdtoword.pojo.Result;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
