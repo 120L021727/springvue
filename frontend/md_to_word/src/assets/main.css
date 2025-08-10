@@ -140,6 +140,8 @@ a,
   z-index: 2;
   padding-top: 80px; /* 为透明导航栏留出空间 */
   padding-bottom: 40px;
+  min-height: calc(100vh - 80px); /* 改为最小高度，允许内容超出时正常显示 */
+  /* 移除 overflow: hidden，让内容可以正常显示 */
 }
 
 /**

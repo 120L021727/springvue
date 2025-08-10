@@ -1,12 +1,19 @@
 <template>
   <LayoutBase>
     <div class="main-content">
-      <div class="blog-container">
-        <!-- 页面标题 -->
-        <div class="page-header">
-          <h1 class="page-title">坤坤的博客</h1>
-          <p class="page-subtitle">分享技术心得，记录学习历程</p>
-        </div>
+      <div class="blog-layout">
+        <aside class="overview-sidebar glass-effect" v-loading="overviewLoading">
+          <div class="overview-header">目录</div>
+          <el-scrollbar class="overview-scroll">
+            <ul class="overview-list">
+              <li v-for="item in overview" :key="item.id" class="overview-item" @click="viewBlog(item.id)">
+                <el-icon class="overview-icon"><Document /></el-icon>
+                <span class="title" :title="item.title">{{ item.title }}</span>
+              </li>
+            </ul>
+          </el-scrollbar>
+        </aside>
+        <div class="blog-container">
 
         <!-- 筛选和搜索区域 -->
         <div class="filter-section">
@@ -175,13 +182,12 @@
         <div class="pagination-container" v-if="total > 0">
           <el-pagination
             v-model:current-page="pagination.page"
-            v-model:page-size="pagination.size"
-            :page-sizes="[10, 20, 50, 100]"
+            :page-size="pagination.size"
             :total="total"
-            layout="total, sizes, prev, pager, next, jumper"
-            @size-change="handleSizeChange"
+            layout="total, prev, pager, next, jumper"
             @current-change="handleCurrentChange"
           />
+        </div>
         </div>
       </div>
     </div>
@@ -192,7 +198,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Edit } from '@element-plus/icons-vue'
+import { Search, Refresh, Edit, Document } from '@element-plus/icons-vue'
 import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 import { blogApi } from '@/utils/blogApi'
@@ -207,6 +213,8 @@ const loading = ref(false)
 const blogs = ref([])
 const categories = ref([])
 const total = ref(0)
+const overview = ref([])
+const overviewLoading = ref(false)
 
 // 作者信息缓存（复用组合式，跨页面共享）
 const { ensureAuthors, getAuthorName } = useAuthorCache()
@@ -218,10 +226,10 @@ const filters = reactive({
   keyword: ''
 })
 
-// 分页配置
+// 分页配置（固定每页4条，不允许修改）
 const pagination = reactive({
   page: 1,
-  size: 10
+  size: 4
 })
 
 // 加载博客列表
@@ -252,6 +260,21 @@ const loadBlogs = async () => {
   }
 }
 
+// 加载目录（该用户可见的全部文章标题）
+const loadOverview = async () => {
+  try {
+    overviewLoading.value = true
+    const response = await blogApi.getBlogList({ page: 1, size: 1000, status: filters.status, categoryId: filters.categoryId, keyword: filters.keyword })
+    if (response.data.success) {
+      overview.value = (response.data.data.records || []).map(b => ({ id: b.id, title: b.title }))
+    }
+  } catch (e) {
+    console.error('加载目录失败:', e)
+  } finally {
+    overviewLoading.value = false
+  }
+}
+
 // 加载分类列表
 const loadCategories = async () => {
   try {
@@ -270,6 +293,7 @@ const loadCategories = async () => {
 const handleFilterChange = () => {
   pagination.page = 1
   loadBlogs()
+  loadOverview()
 }
 
 // 重置筛选条件
@@ -281,6 +305,7 @@ const resetFilters = () => {
   })
   pagination.page = 1
   loadBlogs()
+  loadOverview()
 }
 
 // 分页处理
@@ -319,6 +344,7 @@ const publishDraft = async (blogId) => {
     if (response.data.success) {
       ElMessage.success('发布成功')
       loadBlogs()
+      loadOverview()
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -342,6 +368,7 @@ const deleteBlog = async (blogId) => {
     if (response.data.success) {
       ElMessage.success('删除成功')
       loadBlogs()
+      loadOverview()
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -365,20 +392,74 @@ const isAuthor = (authorId) => {
 onMounted(() => {
   loadCategories()
   loadBlogs()
+  loadOverview()
 })
 </script>
 
 <style scoped>
 .blog-container {
-  max-width: 1200px;
+  max-width: 1000px;
   margin: 0 auto;
   padding: 0 20px;
+  position: relative;
+  /* 为底部分页预留空间 */
+  padding-bottom: 80px;
 }
 
-.page-header {
-  text-align: center;
-  margin-bottom: 40px;
+/* 上下空间更紧凑，让整体靠上 */
+.main-content {
+  padding-top: 20px; /* 减少顶部间距，让内容更靠上 */
 }
+
+.blog-layout {
+  display: grid;
+  grid-template-columns: 260px 1fr;
+  gap: 20px;
+}
+
+.overview-sidebar {
+  padding: 12px;
+  border-radius: 10px;
+  position: sticky;
+  top: 80px; /* 调整与新的padding-top对齐 */
+  /* 高度撑满可视区，给滚动容器留足空间 */
+  max-height: calc(100vh - 120px); /* 调整高度适应新布局 */
+  /* 弱化边框与阴影，使侧栏更融入背景 */
+  border: none !important;
+  box-shadow: none !important;
+  background: rgba(255, 255, 255, 0.06);
+  backdrop-filter: blur(8px);
+  /* 仅保留底部分隔线，避免突兀的边框 */
+  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
+}
+
+.overview-header {
+  color: #ffffff;
+  font-weight: 600;
+  margin-bottom: 10px;
+}
+
+.overview-scroll {
+  height: calc(100vh - 140px);
+}
+
+.overview-list { list-style: none; padding: 0; margin: 0; }
+
+.overview-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 10px;
+  border-radius: 8px;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+}
+
+.overview-item:hover { background: rgba(255, 255, 255, 0.15); }
+.overview-icon { opacity: 0.9; }
+.overview-item .title { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+/* 去掉原标题区域 */
 
 .filter-section {
   display: flex;
@@ -397,13 +478,14 @@ onMounted(() => {
 }
 
 .blog-list {
-  margin-bottom: 40px;
+  margin-bottom: 0;
+  /* 移除固定高度和滚动，让内容自然展示，分页控制显示数量 */
 }
 
 .blog-grid {
   display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
-  gap: 20px;
+  grid-template-columns: repeat(2, 1fr); /* 固定2列布局，确保每页4个卡片能完整显示 */
+  gap: 15px; /* 减小间距，节省空间 */
 }
 
 .blog-card {
@@ -421,7 +503,7 @@ onMounted(() => {
 }
 
 .blog-card-content {
-  padding: 20px;
+  padding: 15px; /* 减少内边距，让卡片更紧凑 */
 }
 
 .blog-header {
@@ -469,11 +551,12 @@ onMounted(() => {
 
 .blog-excerpt {
   color: rgba(255, 255, 255, 0.8);
-  line-height: 1.6;
-  margin-bottom: 20px;
-  font-size: 0.95rem;
+  line-height: 1.5;
+  margin-bottom: 15px;
+  font-size: 0.9rem;
   display: -webkit-box;
-  -webkit-line-clamp: 3;
+  -webkit-line-clamp: 2; /* 减少显示行数，让卡片更紧凑 */
+  line-clamp: 2; /* 标准属性，兼容性 */
   -webkit-box-orient: vertical;
   overflow: hidden;
 }
@@ -502,10 +585,95 @@ onMounted(() => {
 .pagination-container {
   display: flex;
   justify-content: center;
-  margin-top: 40px;
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: 12px 20px;
+  background: rgba(255, 255, 255, 0.1);
+  backdrop-filter: blur(12px);
+  border-radius: 25px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.15);
+  min-width: 300px;
+}
+
+/* 美化分页组件内部样式 */
+.pagination-container :deep(.el-pagination) {
+  --el-pagination-font-size: 14px;
+  --el-pagination-bg-color: transparent;
+  --el-pagination-text-color: rgba(255, 255, 255, 0.9);
+  --el-pagination-border-radius: 6px;
+  --el-pagination-button-color: rgba(255, 255, 255, 0.8);
+  --el-pagination-button-bg-color: rgba(255, 255, 255, 0.1);
+  --el-pagination-button-disabled-color: rgba(255, 255, 255, 0.4);
+  --el-pagination-button-disabled-bg-color: transparent;
+  --el-pagination-hover-color: #ffffff;
+  --el-pagination-hover-bg-color: rgba(255, 255, 255, 0.2);
+}
+
+.pagination-container :deep(.el-pagination .btn-prev),
+.pagination-container :deep(.el-pagination .btn-next) {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.pagination-container :deep(.el-pagination .btn-prev:hover),
+.pagination-container :deep(.el-pagination .btn-next:hover) {
+  background: rgba(255, 255, 255, 0.25);
+  color: #ffffff;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.2);
+}
+
+.pagination-container :deep(.el-pagination .el-pager li) {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  color: rgba(255, 255, 255, 0.9);
+  border-radius: 8px;
+  margin: 0 2px;
+  transition: all 0.3s ease;
+}
+
+.pagination-container :deep(.el-pagination .el-pager li:hover) {
+  background: rgba(255, 255, 255, 0.2);
+  color: #ffffff;
+  transform: translateY(-1px);
+}
+
+.pagination-container :deep(.el-pagination .el-pager li.is-active) {
+  background: rgba(255, 255, 255, 0.3);
+  color: #ffffff;
+  border-color: rgba(255, 255, 255, 0.4);
+  font-weight: 600;
+}
+
+.pagination-container :deep(.el-pagination .el-pagination__total) {
+  color: rgba(255, 255, 255, 0.8);
+  font-weight: 500;
+}
+
+.pagination-container :deep(.el-pagination .el-pagination__jump) {
+  color: rgba(255, 255, 255, 0.8);
+}
+
+.pagination-container :deep(.el-pagination .el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.15);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 6px;
+}
+
+.pagination-container :deep(.el-pagination .el-input__inner) {
+  color: rgba(255, 255, 255, 0.9);
+  text-align: center;
 }
 
 @media (max-width: 768px) {
+  .blog-layout { grid-template-columns: 1fr; }
+  .overview-sidebar { display: none; }
   .filter-section {
     flex-direction: column;
     gap: 15px;
@@ -531,6 +699,30 @@ onMounted(() => {
   .blog-actions {
     flex-direction: column;
     gap: 5px;
+  }
+  
+  /* 移动端分页样式优化 */
+  .pagination-container {
+    bottom: 10px;
+    left: 10px;
+    right: 10px;
+    transform: none;
+    min-width: auto;
+    padding: 10px 15px;
+    border-radius: 20px;
+  }
+  
+  .pagination-container :deep(.el-pagination) {
+    --el-pagination-font-size: 12px;
+  }
+  
+  .pagination-container :deep(.el-pagination .btn-prev),
+  .pagination-container :deep(.el-pagination .btn-next),
+  .pagination-container :deep(.el-pagination .el-pager li) {
+    min-width: 32px;
+    height: 32px;
+    line-height: 30px;
+    font-size: 12px;
   }
 }
 </style>
