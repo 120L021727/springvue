@@ -6,9 +6,19 @@
           <div class="overview-header">目录</div>
           <el-scrollbar class="overview-scroll">
             <ul class="overview-list">
-              <li v-for="item in overview" :key="item.id" class="overview-item" @click="viewBlog(item.id)">
-                <el-icon class="overview-icon"><Document /></el-icon>
-                <span class="title" :title="item.title">{{ item.title }}</span>
+              <li v-for="cat in overviewTree" :key="cat.id" class="overview-category">
+                <div class="category-header" @click="toggleCategory(cat.id)">
+                  <el-icon class="category-icon"><Folder /></el-icon>
+                  <span class="category-title">{{ cat.name }}</span>
+                  <span class="category-count">{{ cat.children.length }}</span>
+                  <el-icon class="expand-icon" :class="{ open: isCategoryOpen(cat.id) }"><ArrowDown /></el-icon>
+                </div>
+                <ul class="category-children" v-show="isCategoryOpen(cat.id)">
+                  <li v-for="item in cat.children" :key="item.id" class="overview-item" @click="viewBlog(item.id)">
+                    <el-icon class="overview-icon"><Document /></el-icon>
+                    <span class="title" :title="item.title">{{ item.title }}</span>
+                  </li>
+                </ul>
               </li>
             </ul>
           </el-scrollbar>
@@ -198,7 +208,7 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Edit, Document } from '@element-plus/icons-vue'
+import { Search, Refresh, Edit, Document, Folder, ArrowDown } from '@element-plus/icons-vue'
 import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 import { blogApi } from '@/utils/blogApi'
@@ -214,6 +224,8 @@ const blogs = ref([])
 const categories = ref([])
 const total = ref(0)
 const overview = ref([])
+// 分类展开状态
+const openCategoryMap = reactive({})
 const overviewLoading = ref(false)
 
 // 作者信息缓存（复用组合式，跨页面共享）
@@ -260,13 +272,66 @@ const loadBlogs = async () => {
   }
 }
 
+// 计算：分类ID到名称
+const categoryNameById = computed(() => {
+  const idToName = {}
+  ;(categories.value || []).forEach((c) => {
+    if (c && c.id != null) {
+      idToName[c.id] = c.name
+    }
+  })
+  return idToName
+})
+
+// 目录树：按分类分组，一级为分类，二级为文章
+const overviewTree = computed(() => {
+  const groups = {}
+  ;(overview.value || []).forEach((b) => {
+    const groupKey = b.categoryId ?? 'uncategorized'
+    if (!groups[groupKey]) groups[groupKey] = []
+    groups[groupKey].push(b)
+  })
+
+  return Object.keys(groups).map((key) => {
+    const name = key === 'uncategorized'
+      ? '未分类'
+      : (categoryNameById.value[key] || `分类 ${key}`)
+    const children = groups[key].slice().sort((a, b) => {
+      return String(a.title || '').localeCompare(String(b.title || ''), 'zh-Hans-CN')
+    })
+    return { id: key, name, children }
+  }).sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-Hans-CN'))
+})
+
+const isCategoryOpen = (categoryId) => {
+  // 默认展开，除非显式设为 false
+  return openCategoryMap[categoryId] !== false
+}
+
+const toggleCategory = (categoryId) => {
+  openCategoryMap[categoryId] = !isCategoryOpen(categoryId)
+}
+
+const initCategoryOpenState = () => {
+  overviewTree.value.forEach((cat) => {
+    if (openCategoryMap[cat.id] === undefined) {
+      openCategoryMap[cat.id] = true
+    }
+  })
+}
+
 // 加载目录（该用户可见的全部文章标题）
 const loadOverview = async () => {
   try {
     overviewLoading.value = true
     const response = await blogApi.getBlogList({ page: 1, size: 1000, status: filters.status, categoryId: filters.categoryId, keyword: filters.keyword })
     if (response.data.success) {
-      overview.value = (response.data.data.records || []).map(b => ({ id: b.id, title: b.title }))
+      overview.value = (response.data.data.records || []).map(b => ({
+        id: b.id,
+        title: b.title,
+        categoryId: b.categoryId ?? 'uncategorized'
+      }))
+      initCategoryOpenState()
     }
   } catch (e) {
     console.error('加载目录失败:', e)
@@ -447,7 +512,7 @@ onMounted(() => {
 
 .overview-list { list-style: none; padding: 0; margin: 0; }
 
-.overview-item {
+.overview-item, .overview-category .category-header {
   display: flex;
   align-items: center;
   gap: 8px;
@@ -457,9 +522,24 @@ onMounted(() => {
   cursor: pointer;
 }
 
-.overview-item:hover { background: rgba(255, 255, 255, 0.15); }
+.overview-item:hover, .overview-category .category-header:hover { background: rgba(255, 255, 255, 0.15); }
 .overview-icon { opacity: 0.9; }
 .overview-item .title { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+.overview-category { margin-bottom: 6px; }
+.overview-category .category-header { justify-content: space-between; }
+.overview-category .category-title {
+  flex: 1;
+  font-weight: 600;
+}
+.overview-category .category-count {
+  font-size: 12px;
+  opacity: 0.8;
+  margin-right: 6px;
+}
+.overview-category .expand-icon { transition: transform 0.2s ease; }
+.overview-category .expand-icon.open { transform: rotate(180deg); }
+.overview-category .category-children { list-style: none; padding-left: 26px; margin: 6px 0 4px; }
 
 /* 去掉原标题区域 */
 
