@@ -91,13 +91,7 @@
               </div>
             </el-form-item>
 
-            <!-- 状态 -->
-            <el-form-item label="状态" prop="status">
-              <el-radio-group v-model="blogForm.status">
-                <el-radio label="draft">草稿</el-radio>
-                <el-radio label="published">发布</el-radio>
-              </el-radio-group>
-            </el-form-item>
+            <!-- 状态选择移除：由下方按钮决定提交为草稿或发布 -->
 
             <!-- 操作按钮 -->
             <el-form-item>
@@ -106,7 +100,7 @@
                 <el-button @click="saveAsDraft" size="large">保存草稿</el-button>
                 <el-button 
                   type="primary" 
-                  @click="saveBlog" 
+                  @click="publishBlog" 
                   size="large"
                   :loading="saving"
                 >
@@ -379,6 +373,11 @@ const saveBlog = async () => {
 
 const saveAsDraft = async () => {
   blogForm.value.status = 'draft'
+  await saveBlog()
+}
+
+const publishBlog = async () => {
+  blogForm.value.status = 'published'
   await saveBlog()
 }
 
