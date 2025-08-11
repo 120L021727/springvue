@@ -398,8 +398,10 @@ onMounted(() => {
 
 <style scoped>
 .blog-container {
-  max-width: 1000px;
-  margin: 0 auto;
+  /* 让内容列在网格中占满可用宽度，避免被强制居中变窄 */
+  width: 100%;
+  max-width: none;
+  margin: 0;
   padding: 0 20px;
   position: relative;
   /* 为底部分页预留空间 */
