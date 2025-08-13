@@ -26,6 +26,10 @@ public class FileUploadUtil {
     @Value("${file.upload.max-size:104857600}")
     private long maxSize; // 100MB
 
+    // 富文本图片上传基础目录
+    @Value("${file.rte-upload.path:./uploads/rte/}")
+    private String rteUploadBasePath;
+
     /**
      * 上传头像文件
      * 
@@ -58,6 +62,38 @@ public class FileUploadUtil {
 
         // 6. 返回文件访问路径
         return "/api/file/avatar/" + fileName;
+    }
+
+    /**
+     * 上传富文本图片
+     * 目录：./uploads/rte/yyyy/MM/uuid.ext
+     * 返回：/api/file/rte/yyyy/MM/uuid.ext
+     */
+    public String uploadRteImage(MultipartFile file) throws IOException {
+        if (file == null || file.isEmpty()) {
+            throw new IllegalArgumentException("文件不能为空");
+        }
+        if (file.getSize() > maxSize) {
+            throw new IllegalArgumentException("文件大小不能超过100MB");
+        }
+
+        java.time.LocalDate now = java.time.LocalDate.now();
+        String year = String.valueOf(now.getYear());
+        String month = String.format("%02d", now.getMonthValue());
+
+        String originalFilename = file.getOriginalFilename();
+        String fileExtension = getFileExtension(originalFilename);
+        String fileName = java.util.UUID.randomUUID().toString() + "." + fileExtension;
+
+        // 目标目录
+        Path dir = Paths.get(rteUploadBasePath, year, month);
+        if (!Files.exists(dir)) {
+            Files.createDirectories(dir);
+        }
+        Path path = dir.resolve(fileName);
+        Files.copy(file.getInputStream(), path);
+
+        return String.format("/api/file/rte/%s/%s/%s", year, month, fileName);
     }
 
     /**

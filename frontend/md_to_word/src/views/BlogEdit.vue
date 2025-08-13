@@ -56,39 +56,12 @@
               </div>
             </el-form-item>
 
-            <!-- 内容 -->
-            <el-form-item label="内容" prop="content">
-              <div class="editor-container">
-                <div class="editor-toolbar">
-                  <el-button-group>
-                    <el-button @click="insertMarkdown('**', '**')" size="small">粗体</el-button>
-                    <el-button @click="insertMarkdown('*', '*')" size="small">斜体</el-button>
-                    <el-button @click="insertMarkdown('`', '`')" size="small">代码</el-button>
-                    <el-button @click="insertMarkdown('[', '](url)')" size="small">链接</el-button>
-                    <el-button @click="insertMarkdown('![alt](', ')')" size="small">图片</el-button>
-                  </el-button-group>
-                  
-                  <el-button-group>
-                    <el-button @click="insertMarkdown('# ', '')" size="small">H1</el-button>
-                    <el-button @click="insertMarkdown('## ', '')" size="small">H2</el-button>
-                    <el-button @click="insertMarkdown('### ', '')" size="small">H3</el-button>
-                  </el-button-group>
-                  
-                  <el-button-group>
-                    <el-button @click="insertMarkdown('- ', '')" size="small">列表</el-button>
-                    <el-button @click="insertMarkdown('1. ', '')" size="small">有序列表</el-button>
-                    <el-button @click="insertMarkdown('> ', '')" size="small">引用</el-button>
-                  </el-button-group>
-                </div>
-                
-                <el-input
-                  v-model="blogForm.content"
-                  type="textarea"
-                  :rows="20"
-                  placeholder="请输入博客内容，支持Markdown格式..."
-                  class="content-editor"
-                />
-              </div>
+            <!-- 内容（富文本） -->
+            <el-form-item label="内容" prop="contentHtml">
+              <!-- 云端版本 -->
+              <!-- <RichTextEditor v-model="blogForm.contentHtml" :minHeight="600" /> -->
+              <!-- 本地化部署版本 -->
+              <RichTextEditorLocal v-model="blogForm.contentHtml" :minHeight="600" />
             </el-form-item>
 
             <!-- 状态选择移除：由下方按钮决定提交为草稿或发布 -->
@@ -179,7 +152,10 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 import service from '@/utils/request'
-import { marked } from 'marked'
+// 使用云端版本：RichTextEditor；
+// 如需本地化部署版本，改为引入 RichTextEditorLocal 并替换组件标签即可
+// import RichTextEditor from '@/components/RichTextEditor.vue'
+import RichTextEditorLocal from '@/components/RichTextEditorLocal.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -220,8 +196,8 @@ const formRules = {
     { required: true, message: '请输入博客标题', trigger: 'blur' },
     { min: 1, max: 200, message: '标题长度在1到200个字符', trigger: 'blur' }
   ],
-  content: [
-    { required: true, message: '请输入博客内容', trigger: 'blur' }
+  contentHtml: [
+    { required: true, message: '请输入博客内容', trigger: 'change' }
   ]
 }
 
@@ -230,10 +206,7 @@ const isEdit = computed(() => {
   return route.params.id !== undefined
 })
 
-const renderedPreview = computed(() => {
-  if (!blogForm.value.content) return ''
-  return marked(blogForm.value.content)
-})
+const renderedPreview = computed(() => '')
 
 // 生命周期
 onMounted(() => {
@@ -301,7 +274,7 @@ const loadBlogDetail = async () => {
       const blog = response.data.data
       blogForm.value = {
         title: blog.title,
-        content: blog.content,
+        contentHtml: blog.contentHtml || '',
         categoryId: blog.categoryId,
         status: blog.status
       }
@@ -312,26 +285,7 @@ const loadBlogDetail = async () => {
   }
 }
 
-const insertMarkdown = (before, after) => {
-  const textarea = document.querySelector('.content-editor textarea')
-  if (!textarea) return
-  
-  const start = textarea.selectionStart
-  const end = textarea.selectionEnd
-  const selectedText = blogForm.value.content.substring(start, end)
-  
-  const newText = before + selectedText + after
-  blogForm.value.content = 
-    blogForm.value.content.substring(0, start) + 
-    newText + 
-    blogForm.value.content.substring(end)
-  
-  // 设置光标位置
-  nextTick(() => {
-    textarea.focus()
-    textarea.setSelectionRange(start + before.length, start + before.length + selectedText.length)
-  })
-}
+// Markdown 工具不再需要，留空以避免报错
 
 const saveBlog = async () => {
   if (!isLoggedIn()) {
@@ -392,7 +346,8 @@ const togglePreview = () => {
 
 <style scoped>
 .blog-edit-container {
-  max-width: 1000px;
+  width: 100%;
+  max-width: 1280px;
   margin: 0 auto;
   padding: 0 20px;
 }

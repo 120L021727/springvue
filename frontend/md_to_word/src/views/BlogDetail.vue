@@ -80,8 +80,8 @@
           <!-- 博客内容 -->
           <div class="blog-body">
             <div class="content-wrapper">
-              <!-- 使用Markdown渲染 -->
-              <div class="markdown-content" v-html="renderedContent"></div>
+              <!-- 富文本渲染 -->
+              <div class="post-content" v-html="blog.contentHtml"></div>
             </div>
           </div>
           
@@ -130,7 +130,6 @@ import { blogApi } from '@/utils/blogApi'
 import { formatDate } from '@/utils/blogUtils'
 import { useAuthorCache } from '@/composables/useAuthorCache'
 import service from '@/utils/request'
-import { marked } from 'marked'
 
 const route = useRoute()
 const router = useRouter()
@@ -149,10 +148,7 @@ const isAuthor = computed(() => {
   return getCurrentUserId() === blog.value.authorId
 })
 
-const renderedContent = computed(() => {
-  if (!blog.value || !blog.value.content) return ''
-  return marked(blog.value.content)
-})
+// 富文本模式，直接使用 contentHtml 展示
 
 // 生命周期
 onMounted(() => {
@@ -381,9 +377,15 @@ const getCategoryName = (categoryId) => {
   font-size: 1.1rem;
 }
 
-.markdown-content {
-  /* Markdown样式 */
+/* 富文本正文主题（与 Markdown 样式区分开） */
+.post-content {
+  line-height: 1.8;
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 1.05rem;
 }
+.post-content img { max-width: 100%; height: auto; border-radius: 8px; margin: 12px 0; display: block; }
+.post-content table { width: 100%; border-collapse: collapse; margin: 1em 0; }
+.post-content th, .post-content td { border: 1px solid rgba(255,255,255,0.2); padding: 10px; }
 
 .markdown-content h1,
 .markdown-content h2,

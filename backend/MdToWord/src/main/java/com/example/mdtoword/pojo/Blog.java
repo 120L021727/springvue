@@ -3,7 +3,6 @@ package com.example.mdtoword.pojo;
 import com.baomidou.mybatisplus.annotation.*;
 import lombok.Data;
 
-import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.time.LocalDateTime;
 
@@ -25,12 +24,17 @@ public class Blog {
     @TableId(value = "id", type = IdType.AUTO) // 指定主键及生成策略
     private Integer id; // 主键ID
     
-    @NotBlank(message = "文章标题不能为空", groups = {CreateGroup.class, UpdateGroup.class})
     @Size(min = 1, max = 200, message = "文章标题长度必须在1-200个字符之间", groups = {CreateGroup.class, UpdateGroup.class})
     private String title; // 文章标题
     
-    @NotBlank(message = "文章内容不能为空", groups = {CreateGroup.class, UpdateGroup.class})
     private String content; // 文章内容
+
+    // 富文本HTML内容
+    @TableField("content_html")
+    private String contentHtml;
+
+    // 列表摘要
+    private String summary;
     
     @TableField("category_id")
     private Integer categoryId; // 分类ID

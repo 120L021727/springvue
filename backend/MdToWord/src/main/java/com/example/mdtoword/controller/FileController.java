@@ -42,6 +42,9 @@ public class FileController {
     @Value("${file.upload.path:./uploads/avatars/}")
     private String uploadPath;
 
+    @Value("${file.rte-upload.path:./uploads/rte/}")
+    private String rteUploadBasePath;
+
     /**
      * 上传头像
      */
@@ -67,6 +70,62 @@ public class FileController {
         } catch (Exception e) {
             return ResponseEntity.status(500)
                 .body(Result.error("头像上传失败"));
+        }
+    }
+
+    /**
+     * 富文本图片上传
+     */
+    @PostMapping("/rte-upload")
+    public ResponseEntity<?> uploadRteImage(@RequestParam("file") MultipartFile file) {
+        try {
+            String url = fileUploadUtil.uploadRteImage(file);
+            // 按 TinyMCE 约定返回 { location: url }
+            java.util.Map<String, String> body = new java.util.HashMap<>();
+            body.put("location", url);
+            return ResponseEntity.ok(body);
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(Result.error(e.getMessage()));
+        } catch (IOException e) {
+            return ResponseEntity.status(500).body(Result.error("文件上传失败：" + e.getMessage()));
+        } catch (Exception e) {
+            return ResponseEntity.status(500).body(Result.error("图片上传失败"));
+        }
+    }
+
+    /**
+     * 访问富文本图片
+     */
+    @GetMapping("/rte/{year}/{month}/{fileName:.+}")
+    public ResponseEntity<Resource> getRteImage(@PathVariable String year, @PathVariable String month, @PathVariable String fileName) {
+        try {
+            Path filePath = Paths.get(rteUploadBasePath).resolve(year).resolve(month).resolve(fileName).normalize();
+            Resource resource = new UrlResource(filePath.toUri());
+            if (resource.exists() && resource.isReadable()) {
+                String contentType;
+                try {
+                    contentType = java.nio.file.Files.probeContentType(filePath);
+                } catch (IOException ex) {
+                    contentType = null;
+                }
+                if (contentType == null) {
+                    String lower = fileName.toLowerCase();
+                    if (lower.endsWith(".png")) contentType = MediaType.IMAGE_PNG_VALUE;
+                    else if (lower.endsWith(".jpg") || lower.endsWith(".jpeg")) contentType = MediaType.IMAGE_JPEG_VALUE;
+                    else if (lower.endsWith(".gif")) contentType = MediaType.IMAGE_GIF_VALUE;
+                    else if (lower.endsWith(".webp")) contentType = "image/webp";
+                    else if (lower.endsWith(".svg")) contentType = "image/svg+xml";
+                    else contentType = MediaType.APPLICATION_OCTET_STREAM_VALUE;
+                }
+                return ResponseEntity.ok()
+                        .contentType(MediaType.parseMediaType(contentType))
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "inline; filename=\"" + resource.getFilename() + "\"")
+                        .body(resource);
+            } else {
+                return ResponseEntity.notFound().build();
+            }
+        } catch (MalformedURLException e) {
+            return ResponseEntity.badRequest().build();
         }
     }
 

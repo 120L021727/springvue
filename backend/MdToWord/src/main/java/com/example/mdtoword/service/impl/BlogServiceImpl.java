@@ -73,11 +73,14 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
             queryWrapper.eq(Blog::getCategoryId, categoryId);
         }
         
-        // 添加关键词搜索条件：在标题和内容中进行模糊搜索
+        // 添加关键词搜索条件：在标题和内容中进行模糊搜索（兼容 content_html）
         if (StringUtils.hasText(keyword)) {
-            queryWrapper.like(Blog::getTitle, keyword.trim())
-                       .or()
-                       .like(Blog::getContent, keyword.trim());
+            String kw = keyword.trim();
+            queryWrapper.and(w -> w.like(Blog::getTitle, kw)
+                                   .or()
+                                   .like(Blog::getContent, kw)
+                                   .or()
+                                   .like(Blog::getContentHtml, kw));
         }
         
         // 添加作者筛选条件
@@ -164,6 +167,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
         if (!StringUtils.hasText(blog.getStatus())) {
             blog.setStatus("draft");
         }
+
+        // 生成摘要
+        blog.setSummary(generateSummary(blog));
         
         // 插入数据库并返回操作结果
         return blogMapper.insert(blog) > 0;
@@ -201,6 +207,9 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
             }
         }
         
+        // 生成摘要
+        blog.setSummary(generateSummary(blog));
+
         // 更新数据库并返回操作结果
         return blogMapper.updateById(blog) > 0;
     }
@@ -297,11 +306,21 @@ public class BlogServiceImpl extends ServiceImpl<BlogMapper, Blog> implements Bl
         if (!StringUtils.hasText(blog.getTitle())) {
             throw new BusinessException("博客标题不能为空");
         }
-        if (!StringUtils.hasText(blog.getContent())) {
+        if (!StringUtils.hasText(blog.getContent()) && !StringUtils.hasText(blog.getContentHtml())) {
             throw new BusinessException("博客内容不能为空");
         }
         if (blog.getAuthorId() == null) {
             throw new BusinessException("作者ID不能为空");
         }
+    }
+
+    private String generateSummary(Blog blog) {
+        String src = StringUtils.hasText(blog.getContentHtml()) ? blog.getContentHtml() : blog.getContent();
+        if (!StringUtils.hasText(src)) return null;
+        String plain = src.replaceAll("<[^>]+>", " ")
+                          .replaceAll("&nbsp;", " ")
+                          .replaceAll("\\s+", " ")
+                          .trim();
+        return plain.substring(0, Math.min(180, plain.length()));
     }
 } 
