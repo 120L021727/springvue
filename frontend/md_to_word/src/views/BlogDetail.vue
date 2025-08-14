@@ -160,7 +160,7 @@ const isAuthor = computed(() => {
   return getCurrentUserId() === blog.value.authorId
 })
 
-// 富文本模式，直接使用 contentHtml 展示
+// 富文本模式：直接使用 contentHtml 展示，无需 markdown 解析
 
 // 监听路由参数变化，实现同组件内的文章切换
 watch(
@@ -428,7 +428,7 @@ const getCategoryName = (categoryId) => {
   font-size: 1.05rem;
 }
 
-/* 富文本正文主题（与 Markdown 样式区分开） */
+/* 富文本正文样式 - 适用于 contentHtml 渲染 */
 .post-content {
   line-height: 1.8;
   color: #24292f; /* GitHub-like */
@@ -453,110 +453,7 @@ const getCategoryName = (categoryId) => {
 .post-content table { width: 100%; border-collapse: collapse; margin: 1em 0; }
 .post-content th, .post-content td { border: 1px solid #e5e7eb; padding: 10px; }
 
-.markdown-content h1,
-.markdown-content h2,
-.markdown-content h3,
-.markdown-content h4,
-.markdown-content h5,
-.markdown-content h6 {
-  color: white;
-  margin-top: 30px;
-  margin-bottom: 15px;
-  font-weight: 600;
-}
-
-.markdown-content h1 {
-  font-size: 1.8rem;
-  border-bottom: 2px solid rgba(255, 255, 255, 0.2);
-  padding-bottom: 10px;
-}
-
-.markdown-content h2 {
-  font-size: 1.5rem;
-}
-
-.markdown-content h3 {
-  font-size: 1.3rem;
-}
-
-.markdown-content p {
-  margin-bottom: 15px;
-  line-height: 1.8;
-}
-
-.markdown-content ul,
-.markdown-content ol {
-  margin-bottom: 15px;
-  padding-left: 20px;
-}
-
-.markdown-content li {
-  margin-bottom: 8px;
-}
-
-.markdown-content blockquote {
-  border-left: 4px solid rgba(255, 255, 255, 0.3);
-  padding-left: 20px;
-  margin: 20px 0;
-  font-style: italic;
-  color: rgba(255, 255, 255, 0.8);
-}
-
-.markdown-content code {
-  background: rgba(255, 255, 255, 0.1);
-  padding: 2px 6px;
-  border-radius: 4px;
-  font-family: 'Courier New', monospace;
-  font-size: 0.9rem;
-}
-
-.markdown-content pre {
-  background: rgba(0, 0, 0, 0.3);
-  padding: 20px;
-  border-radius: 8px;
-  overflow-x: auto;
-  margin: 20px 0;
-}
-
-.markdown-content pre code {
-  background: none;
-  padding: 0;
-  color: rgba(255, 255, 255, 0.9);
-}
-
-.markdown-content a {
-  color: #4CAF50;
-  text-decoration: none;
-}
-
-.markdown-content a:hover {
-  text-decoration: underline;
-}
-
-.markdown-content img {
-  max-width: 100%;
-  height: auto;
-  border-radius: 8px;
-  margin: 20px 0;
-}
-
-.markdown-content table {
-  width: 100%;
-  border-collapse: collapse;
-  margin: 20px 0;
-}
-
-.markdown-content th,
-.markdown-content td {
-  border: 1px solid rgba(255, 255, 255, 0.2);
-  padding: 12px;
-  text-align: left;
-}
-
-.markdown-content th {
-  background: rgba(255, 255, 255, 0.1);
-  font-weight: 600;
-}
+/* Markdown 样式已移除，现在使用富文本 contentHtml */
 
 .blog-footer {
   display: flex;
