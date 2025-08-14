@@ -2,27 +2,12 @@
   <LayoutBase>
     <div class="main-content">
       <div class="blog-layout">
-        <aside class="overview-sidebar glass-effect" v-loading="overviewLoading">
-          <div class="overview-header">目录</div>
-          <el-scrollbar class="overview-scroll">
-            <ul class="overview-list">
-              <li v-for="cat in overviewTree" :key="cat.id" class="overview-category">
-                <div class="category-header" @click="toggleCategory(cat.id)">
-                  <el-icon class="category-icon"><Folder /></el-icon>
-                  <span class="category-title">{{ cat.name }}</span>
-                  <span class="category-count">{{ cat.children.length }}</span>
-                  <el-icon class="expand-icon" :class="{ open: isCategoryOpen(cat.id) }"><ArrowDown /></el-icon>
-                </div>
-                <ul class="category-children" v-show="isCategoryOpen(cat.id)">
-                  <li v-for="item in cat.children" :key="item.id" class="overview-item" @click="viewBlog(item.id)">
-                    <el-icon class="overview-icon"><Document /></el-icon>
-                    <span class="title" :title="item.title">{{ item.title }}</span>
-                  </li>
-                </ul>
-              </li>
-            </ul>
-          </el-scrollbar>
-        </aside>
+        <OverviewSidebar
+          :filters="filters"
+          :remember-scroll="true"
+          storage-key="overviewScrollTop"
+          @select="viewBlog"
+        />
         <div class="blog-container">
 
         <!-- 筛选和搜索区域 -->
@@ -208,8 +193,9 @@
 import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Search, Refresh, Edit, Document, Folder, ArrowDown } from '@element-plus/icons-vue'
+import { Search, Refresh, Edit } from '@element-plus/icons-vue'
 import LayoutBase from '@/components/LayoutBase.vue'
+import OverviewSidebar from '@/components/OverviewSidebar.vue'
 import { useAuth } from '@/composables/useAuth'
 import { blogApi } from '@/utils/blogApi'
 import { useAuthorCache } from '@/composables/useAuthorCache'
@@ -223,10 +209,7 @@ const loading = ref(false)
 const blogs = ref([])
 const categories = ref([])
 const total = ref(0)
-const overview = ref([])
-// 分类展开状态
-const openCategoryMap = reactive({})
-const overviewLoading = ref(false)
+// 目录功能已移至 OverviewSidebar 组件
 
 // 作者信息缓存（复用组合式，跨页面共享）
 const { ensureAuthors, getAuthorName } = useAuthorCache()
@@ -272,73 +255,7 @@ const loadBlogs = async () => {
   }
 }
 
-// 计算：分类ID到名称
-const categoryNameById = computed(() => {
-  const idToName = {}
-  ;(categories.value || []).forEach((c) => {
-    if (c && c.id != null) {
-      idToName[c.id] = c.name
-    }
-  })
-  return idToName
-})
-
-// 目录树：按分类分组，一级为分类，二级为文章
-const overviewTree = computed(() => {
-  const groups = {}
-  ;(overview.value || []).forEach((b) => {
-    const groupKey = b.categoryId ?? 'uncategorized'
-    if (!groups[groupKey]) groups[groupKey] = []
-    groups[groupKey].push(b)
-  })
-
-  return Object.keys(groups).map((key) => {
-    const name = key === 'uncategorized'
-      ? '未分类'
-      : (categoryNameById.value[key] || `分类 ${key}`)
-    const children = groups[key].slice().sort((a, b) => {
-      return String(a.title || '').localeCompare(String(b.title || ''), 'zh-Hans-CN')
-    })
-    return { id: key, name, children }
-  }).sort((a, b) => String(a.name).localeCompare(String(b.name), 'zh-Hans-CN'))
-})
-
-const isCategoryOpen = (categoryId) => {
-  // 默认展开，除非显式设为 false
-  return openCategoryMap[categoryId] !== false
-}
-
-const toggleCategory = (categoryId) => {
-  openCategoryMap[categoryId] = !isCategoryOpen(categoryId)
-}
-
-const initCategoryOpenState = () => {
-  overviewTree.value.forEach((cat) => {
-    if (openCategoryMap[cat.id] === undefined) {
-      openCategoryMap[cat.id] = true
-    }
-  })
-}
-
-// 加载目录（该用户可见的全部文章标题）
-const loadOverview = async () => {
-  try {
-    overviewLoading.value = true
-    const response = await blogApi.getBlogList({ page: 1, size: 1000, status: filters.status, categoryId: filters.categoryId, keyword: filters.keyword })
-    if (response.data.success) {
-      overview.value = (response.data.data.records || []).map(b => ({
-        id: b.id,
-        title: b.title,
-        categoryId: b.categoryId ?? 'uncategorized'
-      }))
-      initCategoryOpenState()
-    }
-  } catch (e) {
-    console.error('加载目录失败:', e)
-  } finally {
-    overviewLoading.value = false
-  }
-}
+// 目录相关逻辑已移至 OverviewSidebar 组件
 
 // 加载分类列表
 const loadCategories = async () => {
@@ -358,7 +275,7 @@ const loadCategories = async () => {
 const handleFilterChange = () => {
   pagination.page = 1
   loadBlogs()
-  loadOverview()
+  // 目录会通过 OverviewSidebar 组件的 watch 自动更新
 }
 
 // 重置筛选条件
@@ -370,7 +287,7 @@ const resetFilters = () => {
   })
   pagination.page = 1
   loadBlogs()
-  loadOverview()
+  // 目录会通过 OverviewSidebar 组件的 watch 自动更新
 }
 
 // 分页处理
@@ -409,7 +326,7 @@ const publishDraft = async (blogId) => {
     if (response.data.success) {
       ElMessage.success('发布成功')
       loadBlogs()
-      loadOverview()
+      // 目录会通过 OverviewSidebar 组件自动刷新
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -433,7 +350,7 @@ const deleteBlog = async (blogId) => {
     if (response.data.success) {
       ElMessage.success('删除成功')
       loadBlogs()
-      loadOverview()
+      // 目录会通过 OverviewSidebar 组件自动刷新
     }
   } catch (error) {
     if (error !== 'cancel') {
@@ -457,7 +374,7 @@ const isAuthor = (authorId) => {
 onMounted(() => {
   loadCategories()
   loadBlogs()
-  loadOverview()
+  // 目录由 OverviewSidebar 组件自行加载
 })
 </script>
 
@@ -484,62 +401,7 @@ onMounted(() => {
   gap: 20px;
 }
 
-.overview-sidebar {
-  padding: 12px;
-  border-radius: 10px;
-  position: sticky;
-  top: 80px; /* 调整与新的padding-top对齐 */
-  /* 高度撑满可视区，给滚动容器留足空间 */
-  max-height: calc(100vh - 120px); /* 调整高度适应新布局 */
-  /* 弱化边框与阴影，使侧栏更融入背景 */
-  border: none !important;
-  box-shadow: none !important;
-  background: rgba(255, 255, 255, 0.06);
-  backdrop-filter: blur(8px);
-  /* 仅保留底部分隔线，避免突兀的边框 */
-  border-bottom: 1px solid rgba(255, 255, 255, 0.15);
-}
-
-.overview-header {
-  color: #ffffff;
-  font-weight: 600;
-  margin-bottom: 10px;
-}
-
-.overview-scroll {
-  height: calc(100vh - 140px);
-}
-
-.overview-list { list-style: none; padding: 0; margin: 0; }
-
-.overview-item, .overview-category .category-header {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 8px 10px;
-  border-radius: 8px;
-  color: rgba(255, 255, 255, 0.85);
-  cursor: pointer;
-}
-
-.overview-item:hover, .overview-category .category-header:hover { background: rgba(255, 255, 255, 0.15); }
-.overview-icon { opacity: 0.9; }
-.overview-item .title { max-width: 200px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-
-.overview-category { margin-bottom: 6px; }
-.overview-category .category-header { justify-content: space-between; }
-.overview-category .category-title {
-  flex: 1;
-  font-weight: 600;
-}
-.overview-category .category-count {
-  font-size: 12px;
-  opacity: 0.8;
-  margin-right: 6px;
-}
-.overview-category .expand-icon { transition: transform 0.2s ease; }
-.overview-category .expand-icon.open { transform: rotate(180deg); }
-.overview-category .category-children { list-style: none; padding-left: 26px; margin: 6px 0 4px; }
+/* 目录样式已移至 OverviewSidebar 组件 */
 
 /* 去掉原标题区域 */
 

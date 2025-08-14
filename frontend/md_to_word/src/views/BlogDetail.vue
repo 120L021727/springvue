@@ -1,7 +1,16 @@
 <template>
   <LayoutBase>
     <div class="main-content">
-      <div class="blog-detail-container">
+      <div class="blog-layout">
+                <!-- 目录栏（常驻，公共组件） -->
+        <OverviewSidebar
+          :active-id="route.params.id"
+          :remember-scroll="true"
+          storage-key="overviewScrollTop"
+          @select="handleOverviewSelect"
+        />
+
+        <div class="blog-detail-container">
         <div v-if="loading" class="loading-container">
           <el-skeleton :rows="10" animated />
         </div>
@@ -114,17 +123,19 @@
             <el-button type="primary" @click="goBack">返回博客列表</el-button>
           </el-empty>
         </div>
+        </div>
       </div>
     </div>
   </LayoutBase>
 </template>
 
 <script setup>
-import { ref, onMounted, computed } from 'vue'
+import { ref, onMounted, computed, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { ArrowLeft, Share } from '@element-plus/icons-vue'
 import LayoutBase from '@/components/LayoutBase.vue'
+import OverviewSidebar from '@/components/OverviewSidebar.vue'
 import { useAuth } from '@/composables/useAuth'
 import { blogApi } from '@/utils/blogApi'
 import { formatDate } from '@/utils/blogUtils'
@@ -141,6 +152,7 @@ const loading = ref(true)
 const blog = ref(null)
 const categories = ref([])
 const author = ref(null)
+// 目录功能已移至 OverviewSidebar 组件
 
 // 计算属性
 const isAuthor = computed(() => {
@@ -150,10 +162,22 @@ const isAuthor = computed(() => {
 
 // 富文本模式，直接使用 contentHtml 展示
 
+// 监听路由参数变化，实现同组件内的文章切换
+watch(
+  () => route.params.id,
+  (newId, oldId) => {
+    if (newId && newId !== oldId) {
+      console.log('BlogDetail: 路由参数变化，从', oldId, '到', newId)
+      loadBlogDetail()
+    }
+  }
+)
+
 // 生命周期
 onMounted(() => {
   loadCategories()
   loadBlogDetail()
+  // 目录由 OverviewSidebar 组件自行加载
 })
 
 // 方法定义
@@ -168,8 +192,12 @@ const loadCategories = async () => {
   }
 }
 
+// 目录相关逻辑已移至 OverviewSidebar 组件
+
 const loadBlogDetail = async () => {
   const blogId = route.params.id
+  console.log('BlogDetail: 开始加载博客详情，ID:', blogId)
+  
   if (!blogId) {
     ElMessage.error('博客ID无效')
     return
@@ -180,9 +208,11 @@ const loadBlogDetail = async () => {
     const response = await blogApi.getBlogDetail(blogId)
     if (response.data.success) {
       blog.value = response.data.data
+      console.log('BlogDetail: 博客详情加载成功:', blog.value.title)
       // 加载作者信息
       await ensureAuthors([blog.value.authorId])
     } else {
+      console.error('BlogDetail: 博客不存在，响应:', response.data)
       ElMessage.error('博客不存在')
     }
   } catch (error) {
@@ -197,6 +227,12 @@ const loadAuthorInfo = async () => {}
 
 const goBack = () => {
   router.push('/blog')
+}
+
+const handleOverviewSelect = (id) => {
+  console.log('BlogDetail: 收到目录选择事件', id)
+  // 目录点击处理，跳转到对应详情页
+  router.push(`/blog/${id}`)
 }
 
 const editBlog = () => {
@@ -274,9 +310,23 @@ const getCategoryName = (categoryId) => {
 </script>
 
 <style scoped>
+.main-content {
+  padding-top: 20px; /* 与博客列表页对齐 */
+}
+
+.blog-layout {
+  display: grid;
+  grid-template-columns: 260px minmax(0, 1fr); /* 与博客列表页完全一致 */
+  gap: 20px;
+  align-items: start;
+}
+
+/* 目录样式已移至 OverviewSidebar 组件 */
+
 .blog-detail-container {
-  max-width: 800px;
-  margin: 0 auto;
+  width: 100%;
+  max-width: none; /* 移除最大宽度限制，让内容充分利用空间 */
+  margin: 0;
   padding: 0 20px;
 }
 
@@ -297,6 +347,8 @@ const getCategoryName = (categoryId) => {
   padding: 40px;
   border: 1px solid rgba(0, 0, 0, 0.06);
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+  max-width: 1000px; /* 限制正文最大宽度以保持可读性 */
+  margin: 0;
 }
 
 .blog-header {
