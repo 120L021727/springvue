@@ -109,9 +109,9 @@
           <el-empty v-if="blogs.length === 0 && !loading" description="暂无博客文章" />
           
           <div v-else class="blog-grid">
-            <el-card 
-              v-for="blog in blogs" 
-              :key="blog.id" 
+          <el-card 
+            v-for="blog in blogs"
+            :key="blog.id"
               class="blog-card"
               shadow="hover"
               @click="viewBlog(blog.id)"
@@ -129,10 +129,10 @@
                     >
                       草稿
                     </el-tag>
-                  </div>
+            </div>
                   
                   <!-- 博客元信息 -->
-                  <div class="blog-meta">
+              <div class="blog-meta">
                     <span class="blog-category" v-if="getCategoryName(blog.categoryId, categories)">
                       {{ getCategoryName(blog.categoryId, categories) }}
                     </span>
@@ -142,11 +142,11 @@
                 
                 <!-- 博客摘要 -->
                 <div class="blog-excerpt">
-                  {{ getExcerpt(blog.content) }}
-                </div>
+                  {{ blog.summary || getExcerptFromHtml(blog.contentHtml) }}
+              </div>
                 
                 <!-- 博客底部信息 -->
-                <div class="blog-footer">
+              <div class="blog-footer">
                   <div class="blog-author">
                     <el-avatar :size="24" icon="UserFilled" />
                     <span>{{ getAuthorName(blog.authorId) }}</span>
@@ -180,14 +180,14 @@
                       @click="deleteBlog(blog.id)"
                     >
                       删除
-                    </el-button>
+                </el-button>
                   </div>
-                </div>
               </div>
-            </el-card>
+            </div>
+          </el-card>
           </div>
         </div>
-
+        
         <!-- 分页组件 -->
         <div class="pagination-container" v-if="total > 0">
           <el-pagination
@@ -198,9 +198,9 @@
             @current-change="handleCurrentChange"
           />
         </div>
-        </div>
       </div>
     </div>
+  </div>
   </LayoutBase>
 </template>
 
@@ -213,7 +213,7 @@ import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
 import { blogApi } from '@/utils/blogApi'
 import { useAuthorCache } from '@/composables/useAuthorCache'
-import { formatDate, getExcerpt, getCategoryName } from '@/utils/blogUtils'
+import { formatDate, getExcerptFromHtml, getCategoryName } from '@/utils/blogUtils'
 
 const router = useRouter()
 const { isLoggedIn, getCurrentUserId } = useAuth()
@@ -807,4 +807,4 @@ onMounted(() => {
     font-size: 12px;
   }
 }
-</style>
+</style> 

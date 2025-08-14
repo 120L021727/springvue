@@ -30,23 +30,26 @@ export const formatDate = (dateString) => {
   })
 }
 
+// Markdown 相关逻辑已移除
+
 /**
- * 获取博客摘要
- * 
- * 功能说明：
- * - 从博客内容中提取纯文本摘要
- * - 移除Markdown标记符号（#*`）
- * - 将换行符替换为空格
- * - 限制摘要长度，超出部分用省略号表示
- * 
- * @param {string} content 博客内容，支持Markdown格式
- * @param {number} maxLength 最大长度，默认100个字符
- * @returns {string} 处理后的摘要文本
+ * 从 HTML 内容提取摘要
+ * - 去除所有 HTML 标签、压缩空白
+ * - 控制最大长度，超出部分用省略号
+ * @param {string} html 富文本 HTML 内容
+ * @param {number} maxLength 最大长度，默认100
+ * @returns {string}
  */
-export const getExcerpt = (content, maxLength = 100) => {
-  if (!content) return ''
-  // 移除Markdown标记，获取纯文本
-  const text = content.replace(/[#*`]/g, '').replace(/\n/g, ' ')
+export const getExcerptFromHtml = (html, maxLength = 100) => {
+  if (!html) return ''
+  const text = html
+    .replace(/<style[\s\S]*?<\/style>/gi, ' ')
+    .replace(/<script[\s\S]*?<\/script>/gi, ' ')
+    .replace(/<[^>]+>/g, ' ')
+    .replace(/&nbsp;/gi, ' ')
+    .replace(/&amp;/gi, '&')
+    .replace(/\s+/g, ' ')
+    .trim()
   return text.length > maxLength ? text.substring(0, maxLength) + '...' : text
 }
 

@@ -73,7 +73,7 @@ class BlogApiService {
    * @param {string} blogData.status 状态，可选值：draft/published
    * @returns {Promise} API响应，包含创建结果
    */
-  static createBlog(blogData) {
+   static createBlog(blogData) {
     return service.post('/api/blog', blogData)
   }
 
@@ -94,7 +94,7 @@ class BlogApiService {
    * @param {string} blogData.status 状态，可选值：draft/published
    * @returns {Promise} API响应，包含更新结果
    */
-  static updateBlog(id, blogData) {
+   static updateBlog(id, blogData) {
     return service.put(`/api/blog/${id}`, blogData)
   }
 
