@@ -19,11 +19,29 @@ const service = axios.create({
  */
 service.interceptors.request.use(
   (config) => {
-    // 显示加载动画（可通过hideLoading配置隐藏）
-    if (!config.hideLoading) {
+    // 智能Loading策略：
+    // 1. GET请求默认不显示全屏Loading（避免页面锁定）
+    // 2. POST/PUT/PATCH/DELETE等写操作默认显示Loading
+    // 3. 可通过 showLoading: true 强制显示，hideLoading: true 强制隐藏
+    const method = (config.method || 'get').toLowerCase()
+    const isWriteOperation = ['post', 'put', 'patch', 'delete'].includes(method)
+    
+    let shouldShowLoading = false
+    if (config.showLoading === true) {
+      // 显式要求显示Loading
+      shouldShowLoading = true
+    } else if (config.hideLoading === true) {
+      // 显式要求隐藏Loading
+      shouldShowLoading = false
+    } else {
+      // 默认策略：写操作显示Loading，读操作不显示
+      shouldShowLoading = isWriteOperation
+    }
+    
+    if (shouldShowLoading) {
       config.loadingInstance = ElLoading.service({
         lock: true,
-        text: '加载中...',
+        text: '处理中...',
         background: 'rgba(0, 0, 0, 0.7)'
       })
     }
