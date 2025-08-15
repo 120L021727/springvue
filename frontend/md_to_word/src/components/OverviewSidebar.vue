@@ -162,7 +162,13 @@ onMounted(async () => {
   await Promise.all([loadCategories(), loadOverview()])
 })
 
+// 监听筛选条件变化
 watch(() => props.filters, () => { loadOverview() }, { deep: true })
+
+// 暴露刷新方法给父组件
+defineExpose({
+  loadOverview
+})
 </script>
 
 <style scoped>

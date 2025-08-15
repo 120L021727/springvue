@@ -3,6 +3,7 @@
     <div class="main-content">
       <div class="blog-layout">
         <OverviewSidebar
+          ref="overviewSidebarRef"
           :filters="filters"
           :remember-scroll="true"
           storage-key="overviewScrollTop"
@@ -209,6 +210,7 @@ const loading = ref(false)
 const blogs = ref([])
 const categories = ref([])
 const total = ref(0)
+const overviewSidebarRef = ref(null)
 // 目录功能已移至 OverviewSidebar 组件
 
 // 作者信息缓存（复用组合式，跨页面共享）
@@ -246,6 +248,11 @@ const loadBlogs = async () => {
       
       // 加载作者信息
       await ensureAuthors(blogs.value.map(b => b.authorId))
+      
+      // 同步刷新目录侧边栏
+      if (overviewSidebarRef.value) {
+        await overviewSidebarRef.value.loadOverview()
+      }
     }
   } catch (error) {
     console.error('加载博客列表失败:', error)
