@@ -140,7 +140,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { useRouter } from 'vue-router'
 import { useUserStore } from '@/stores/user'
-import axios from 'axios'
+import service from '@/utils/request'
 import LayoutBase from '@/components/LayoutBase.vue'
 
 const router = useRouter()
@@ -249,8 +249,18 @@ const toggleMode = () => {
 }
 
 /**
- * 处理登录 - 使用Spring Security表单登录
- * 通过FormData模拟表单提交，与Spring Security集成
+ * 处理用户登录 - 重构为纯JWT认证模式
+ * 
+ * 重构说明：
+ * 1. 改用统一的JSON格式发送请求
+ * 2. 更新API端点为 /api/auth/login
+ * 3. 移除FormData，使用标准的JSON请求体
+ * 4. 保持相同的错误处理和跳转逻辑
+ * 
+ * 认证流程：
+ * 1. 前端发送JSON格式的用户名密码
+ * 2. 后端AuthController验证并返回JWT Token
+ * 3. 前端保存Token并跳转到目标页面
  */
 const handleLogin = async () => {
   if (!loginFormRef.value) return
@@ -262,16 +272,10 @@ const handleLogin = async () => {
   loading.value = true
   
   try {
-    // 创建FormData对象，模拟表单提交
-    const formData = new FormData()
-    formData.append('username', loginForm.username)
-    formData.append('password', loginForm.password)
-    
-    // 发送POST请求到Spring Security的登录端点
-    const response = await axios.post('/api/user/login', formData, {
-      headers: {
-        'Content-Type': 'application/x-www-form-urlencoded'
-      }
+    // 发送JSON格式的登录请求到新的认证端点
+    const response = await service.post('/api/auth/login', {
+      username: loginForm.username,
+      password: loginForm.password
     })
     
     if (response.data.success) {

@@ -1,8 +1,6 @@
 package com.example.mdtoword.config;
 
 import com.example.mdtoword.security.filter.JwtAuthenticationFilter;
-import com.example.mdtoword.security.handler.CustomAuthenticationSuccessHandler;
-import com.example.mdtoword.security.handler.CustomAuthenticationFailureHandler;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -21,8 +19,19 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
 
 /**
- * Spring Security 安全配置类
- * 配置表单登录、JWT认证、CORS等安全功能
+ * Spring Security 安全配置类 - 纯JWT认证模式
+ * 
+ * 重构说明：
+ * 1. 移除了表单登录相关配置
+ * 2. 移除了自定义认证处理器依赖
+ * 3. 简化为纯JWT认证模式
+ * 4. 保持CORS配置支持前后端分离
+ * 
+ * 认证流程：
+ * 客户端 -> AuthController(/api/auth/login) -> JWT Token -> 后续请求携带Token
+ * 
+ * @author 坤坤
+ * @since 2025-01-20
  */
 @Configuration
 @EnableWebSecurity
@@ -30,12 +39,6 @@ public class SecurityConfig {
     
     @Autowired
     private JwtAuthenticationFilter jwtAuthenticationFilter;
-    
-    @Autowired
-    private CustomAuthenticationSuccessHandler authenticationSuccessHandler;
-    
-    @Autowired
-    private CustomAuthenticationFailureHandler authenticationFailureHandler;
     
     /**
      * 配置认证管理器
@@ -47,42 +50,45 @@ public class SecurityConfig {
     }
     
     /**
-     * 配置安全过滤器链
-     * 启用表单登录 + JWT认证的混合模式
+     * 配置安全过滤器链 - 纯JWT认证模式
+     * 
+     * 配置原则：
+     * 1. 完全无状态 (STATELESS) - 不使用Session
+     * 2. 纯JWT认证 - 移除表单登录配置
+     * 3. RESTful API - 所有接口都是API端点
+     * 4. 统一的权限控制 - 通过JWT Token验证身份
      */
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            // 禁用CSRF，因为使用JWT
+            // 禁用CSRF - JWT本身就防CSRF，且前后端分离不需要CSRF保护
             .csrf(AbstractHttpConfigurer::disable)
-            // 配置CORS跨域
+            
+            // 配置CORS跨域 - 支持前后端分离
             .cors(cors -> cors.configurationSource(corsConfigurationSource()))
+            
             // 配置请求授权规则
             .authorizeHttpRequests(auth -> auth
-                // 允许注册接口匿名访问
-                .requestMatchers("/api/user/register").permitAll()
+                // 认证相关接口允许匿名访问
+                .requestMatchers("/api/auth/**").permitAll()
+                
                 // 健康检查接口允许匿名访问
                 .requestMatchers("/api/converter/health").permitAll()
-                // 允许头像与富文本图片匿名访问（用于前台展示）
+                
+                // 静态资源允许匿名访问（用于前台展示）
                 .requestMatchers("/api/file/avatar/**").permitAll()
                 .requestMatchers("/api/file/rte/**").permitAll()
-                // 其他所有请求都需要认证
+                
+                // 其他所有请求都需要JWT认证
                 .anyRequest().authenticated()
             )
-            // 配置表单登录
-            .formLogin(form -> form
-                .loginProcessingUrl("/api/user/login")  // 登录处理URL
-                .usernameParameter("username")          // 用户名参数
-                .passwordParameter("password")          // 密码参数
-                .successHandler(authenticationSuccessHandler)  // 登录成功处理器
-                .failureHandler(authenticationFailureHandler)  // 登录失败处理器
-                .permitAll()  // 允许所有人访问登录页面
-            )
-            // 配置会话管理为无状态（JWT）
+            
+            // 配置会话管理为完全无状态
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS)
             )
-            // 添加JWT认证过滤器
+            
+            // 添加JWT认证过滤器 - 在用户名密码认证过滤器之前执行
             .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
         
         return http.build();

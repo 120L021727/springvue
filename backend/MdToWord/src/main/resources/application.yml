@@ -31,6 +31,11 @@ mybatis-plus:
       id-type: auto # 主键自增策略
       table-prefix: tb_ # 表前缀
 
+# JWT配置
+jwt:
+  secret: myVeryLongSecretKeyThatIsAtLeast256BitsLongForProductionUse
+  expiration: 86400  # 24小时，单位：秒
+
 logging:
   level:
     com.example.mdtoword: debug

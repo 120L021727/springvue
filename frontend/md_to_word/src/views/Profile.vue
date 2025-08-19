@@ -165,6 +165,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import TopNavbar from '@/components/TopNavbar.vue'
 import { useRouter } from 'vue-router'
 import { Upload } from '@element-plus/icons-vue'
+import service from '@/utils/request'
 
 const userStore = useUserStore()
 const router = useRouter()
@@ -275,24 +276,15 @@ const saveBasicInfo = async () => {
     await basicInfoFormRef.value.validate()
     
     // 2. 调用后端API保存用户信息
-    const response = await fetch('/api/user/info', {
-      method: 'PUT',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${sessionStorage.getItem('jwt-token')}`
-      },
-      body: JSON.stringify({
-        nickname: userInfo.nickname,
-        email: userInfo.email
-      })
+    const response = await service.put('/api/user/info', {
+      nickname: userInfo.nickname,
+      email: userInfo.email
     })
     
-    const result = await response.json()
-    
-    if (result.code === 200) {
+    if (response.data.success) {
       ElMessage.success('基本信息保存成功')
     } else {
-      ElMessage.error(result.message || '保存失败')
+      ElMessage.error(response.data.message || '保存失败')
     }
   } catch (error) {
     console.error('保存基本信息异常:', error)
@@ -300,11 +292,6 @@ const saveBasicInfo = async () => {
     if (error.name === 'ValidationError') {
       // 表单验证失败
       ElMessage.error('请检查输入信息是否正确')
-    } else if (error.response?.status === 401) {
-      // 未授权，可能是token过期
-      ElMessage.error('登录已过期，请重新登录')
-      userStore.logout()
-      router.push('/login')
     } else {
       ElMessage.error('保存失败，请稍后重试')
     }
@@ -333,20 +320,15 @@ const changePassword = async () => {
     })
     
     // 3. 调用后端API修改密码
-    const response = await fetch('/api/user/change-password', {
-      method: 'POST',
+    const response = await service.post('/api/user/change-password', params, {
       headers: {
-        'Content-Type': 'application/x-www-form-urlencoded',
-        'Authorization': `Bearer ${sessionStorage.getItem('jwt-token')}`
-      },
-      body: params
+        'Content-Type': 'application/x-www-form-urlencoded'
+      }
     })
     
-    const result = await response.json()
-    
-    if (result.code === 200) {
+    if (response.data.success) {
       // 4. 密码修改成功
-      ElMessage.success(result.data.message || '密码修改成功')
+      ElMessage.success(response.data.data.message || '密码修改成功')
       
       // 5. 关闭对话框
       showChangePassword.value = false
@@ -359,7 +341,7 @@ const changePassword = async () => {
       })
       
       // 7. 检查是否需要重新登录
-      if (result.data.needRelogin) {
+      if (response.data.data.needRelogin) {
         // 显示提示信息
         ElMessage.info('密码修改成功，即将跳转到登录页面')
         
@@ -377,7 +359,7 @@ const changePassword = async () => {
       }
     } else {
       // 密码修改失败
-      ElMessage.error(result.message || '密码修改失败')
+      ElMessage.error(response.data.message || '密码修改失败')
     }
   } catch (error) {
     console.error('修改密码异常:', error)
@@ -385,11 +367,6 @@ const changePassword = async () => {
     if (error.name === 'ValidationError') {
       // 表单验证失败
       ElMessage.error('请检查输入信息是否正确')
-    } else if (error.response?.status === 401) {
-      // 未授权，可能是token过期
-      ElMessage.error('登录已过期，请重新登录')
-      userStore.logout()
-      router.push('/login')
     } else {
       // 其他错误
       ElMessage.error('修改失败，请稍后重试')
@@ -414,29 +391,22 @@ onMounted(async () => {
  */
 const loadUserInfo = async () => {
   try {
-    const response = await fetch('/api/user/current', {
-      method: 'GET',
-      headers: {
-        'Authorization': `Bearer ${sessionStorage.getItem('jwt-token')}`
-      }
-    })
+    const response = await service.get('/api/user/current')
     
-    const result = await response.json()
-    
-    if (result.code === 200) {
+    if (response.data.success) {
       // 使用工具函数处理头像URL
-      const avatarUrl = getFullAvatarUrl(result.data.userPic)
+      const avatarUrl = getFullAvatarUrl(response.data.data.userPic)
       
       // 更新用户信息
       Object.assign(userInfo, {
-        id: result.data.id,
-        username: result.data.username,
-        email: result.data.email || '',
-        nickname: result.data.nickname || '',
+        id: response.data.data.id,
+        username: response.data.data.username,
+        email: response.data.data.email || '',
+        nickname: response.data.data.nickname || '',
         avatar: avatarUrl
       })
     } else {
-      throw new Error(result.message || '获取用户信息失败')
+      throw new Error(response.data.message || '获取用户信息失败')
     }
   } catch (error) {
     console.error('加载用户信息异常:', error)

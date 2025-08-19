@@ -12,8 +12,13 @@ export const useUserStore = defineStore('user', () => {
   const user = ref(null)
   
   /**
-   * 用户注册
-   * 向后端发送注册请求，创建新用户账户
+   * 用户注册 - 重构为纯JWT认证模式
+   * 
+   * 重构说明：
+   * 1. 更新API端点为 /api/auth/register
+   * 2. 改用JSON格式发送请求数据
+   * 3. 保持相同的错误处理逻辑
+   * 
    * @param {string} username 用户名
    * @param {string} password 密码
    * @returns {Promise<boolean>} 注册是否成功
@@ -21,8 +26,10 @@ export const useUserStore = defineStore('user', () => {
    */
   const register = async (username, password) => {
     try {
-      const response = await service.post('/api/user/register', null, {
-        params: { username, password }
+      // 发送JSON格式的注册请求到新的认证端点
+      const response = await service.post('/api/auth/register', {
+        username,
+        password
       })
       
       if (response.data.success) {

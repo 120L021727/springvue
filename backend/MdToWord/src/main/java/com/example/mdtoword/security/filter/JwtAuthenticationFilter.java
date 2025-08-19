@@ -95,15 +95,26 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     /**
      * 判断是否应该跳过JWT认证
-     * 对于公开的接口（如登录、注册），不需要JWT认证
+     * 
+     * 重构说明：
+     * 1. 更新为新的认证接口路径 (/api/auth/*)
+     * 2. 移除旧的表单登录路径 (/api/user/login)
+     * 3. 保持其他公开接口的跳过逻辑
+     * 
+     * 跳过认证的接口：
+     * - /api/auth/** - 认证相关接口（登录、注册）
+     * - /api/converter/health - 健康检查
+     * - /api/file/avatar/** - 头像访问
+     * - /api/file/rte/** - 富文本图片访问
      */
     @Override
     protected boolean shouldNotFilter(HttpServletRequest request) throws ServletException {
         String path = request.getRequestURI();
-        // 跳过登录、注册、健康检查和头像访问等公开接口
-        return path.startsWith("/api/user/register") || 
-               path.startsWith("/api/user/login") ||
+        
+        // 跳过认证相关接口、健康检查和静态资源访问
+        return path.startsWith("/api/auth/") || 
                path.startsWith("/api/converter/health") ||
-               path.startsWith("/api/file/avatar/");
+               path.startsWith("/api/file/avatar/") ||
+               path.startsWith("/api/file/rte/");
     }
 } 

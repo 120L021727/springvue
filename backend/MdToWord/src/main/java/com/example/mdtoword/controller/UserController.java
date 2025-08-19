@@ -30,26 +30,7 @@ public class UserController {
     @Autowired
     private SecurityUtil securityUtil;
     
-    /**
-     * 用户注册
-     * 
-     * @param username 用户名
-     * @param password 密码
-     * @return 注册结果
-     */
-    @PostMapping("/register")
-    public ResponseEntity<Result<String>> register(
-            @RequestParam String username, 
-            @RequestParam String password) {
-        
-        try {
-            userService.register(username, password);
-            return ResponseEntity.ok(Result.success("注册成功"));
-        } catch (Exception e) {
-            return ResponseEntity.badRequest()
-                .body(Result.error("注册失败：" + e.getMessage()));
-        }
-    }
+
     
     /**
      * 获取当前登录用户信息
