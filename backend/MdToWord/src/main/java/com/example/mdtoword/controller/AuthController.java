@@ -5,6 +5,7 @@ import com.example.mdtoword.pojo.User;
 import com.example.mdtoword.service.UserService;
 import com.example.mdtoword.security.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -17,6 +18,10 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.Size;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.UUID;
+import java.util.concurrent.TimeUnit;
+
+import org.springframework.data.redis.core.StringRedisTemplate;
 
 /**
  * 认证控制器
@@ -45,6 +50,12 @@ public class AuthController {
     
     @Autowired
     private UserService userService;
+
+    @Autowired(required = false)
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Value("${sso.key-prefix:sso:token}")
+    private String ssoKeyPrefix;
     
     /**
      * 用户登录接口
@@ -72,8 +83,18 @@ public class AuthController {
             // 认证成功，获取用户名
             String username = authentication.getName();
             
-            // 生成JWT Token
-            String token = jwtUtil.generateToken(username);
+            // 生成JTI并写入Redis（单点登录：仅保留最近一次登录）
+            String jti = UUID.randomUUID().toString();
+            if (stringRedisTemplate != null) {
+                String key = ssoKeyPrefix + ":" + username;
+                // 使用与JWT相同的过期时间，避免悬挂会话
+                stringRedisTemplate.opsForValue().set(key, jti, jwtUtil.getExpirationDateFromToken(
+                        jwtUtil.generateToken(username, jti)
+                ).getTime() - System.currentTimeMillis(), TimeUnit.MILLISECONDS);
+            }
+
+            // 生成包含JTI的JWT Token
+            String token = jwtUtil.generateToken(username, jti);
             
             // 获取完整的用户信息（用于前端显示）
             User user = userService.findByUserName(username);

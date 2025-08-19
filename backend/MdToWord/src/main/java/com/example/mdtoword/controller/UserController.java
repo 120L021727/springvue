@@ -7,6 +7,8 @@ import com.example.mdtoword.util.SecurityUtil;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.validation.annotation.Validated;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.HashMap;
@@ -29,6 +31,12 @@ public class UserController {
     
     @Autowired
     private SecurityUtil securityUtil;
+
+    @Value("${sso.key-prefix:sso:token}")
+    private String ssoKeyPrefix;
+
+    @Autowired(required = false)
+    private StringRedisTemplate stringRedisTemplate;
     
 
     
@@ -114,6 +122,12 @@ public class UserController {
             result.put("success", success);
             result.put("message", success ? "密码修改成功，请重新登录" : "密码修改失败");
             result.put("needRelogin", success);
+
+            // 修改密码成功后，立即使所有会话失效（删除SSO索引）
+            if (success && stringRedisTemplate != null && currentUser != null) {
+                String key = ssoKeyPrefix + ":" + currentUser.getUsername();
+                stringRedisTemplate.delete(key);
+            }
             
             return ResponseEntity.ok(Result.success(result));
         } catch (Exception e) {
@@ -133,7 +147,14 @@ public class UserController {
      */
     @PostMapping("/logout")
     public ResponseEntity<Result<String>> logout() {
-        // 这里可以添加登出逻辑，比如清除JWT token等
+        try {
+            User currentUser = securityUtil.getCurrentUser();
+            if (stringRedisTemplate != null && currentUser != null) {
+                String key = ssoKeyPrefix + ":" + currentUser.getUsername();
+                stringRedisTemplate.delete(key);
+            }
+        } catch (Exception ignore) {
+        }
         return ResponseEntity.ok(Result.success("登出成功"));
     }
 }

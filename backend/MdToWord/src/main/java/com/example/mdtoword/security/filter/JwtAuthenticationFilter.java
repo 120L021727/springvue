@@ -8,6 +8,8 @@ import jakarta.servlet.http.HttpServletResponse;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -35,6 +37,12 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     
     @Autowired
     private UserDetailsService userDetailsService;
+
+    @Autowired(required = false)
+    private StringRedisTemplate stringRedisTemplate;
+
+    @Value("${sso.key-prefix:sso:token}")
+    private String ssoKeyPrefix;
     
     /**
      * 过滤器核心方法
@@ -53,6 +61,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             if (StringUtils.hasText(token) && jwtUtil.validateToken(token)) {
                 // 从Token中获取用户名
                 String username = jwtUtil.getUsernameFromToken(token);
+                // 单点登录校验：若启用了Redis并配置了SSO，则校验JTI是否匹配
+                if (stringRedisTemplate != null) {
+                    try {
+                        String jti = jwtUtil.getJtiFromToken(token);
+                        String key = ssoKeyPrefix + ":" + username;
+                        String jtiInRedis = stringRedisTemplate.opsForValue().get(key);
+                        if (jtiInRedis == null || !jtiInRedis.equals(jti)) {
+                            // 不匹配，认为令牌已被顶下线或失效
+                            filterChain.doFilter(request, response);
+                            return;
+                        }
+                    } catch (Exception ignore) {
+                        // 若Redis不可用，不阻断请求，仅记录
+                        logger.warn("SSO校验异常: {}", ignore.getMessage());
+                    }
+                }
                 
                 // 加载用户详情
                 UserDetails userDetails = userDetailsService.loadUserByUsername(username);

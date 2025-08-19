@@ -12,6 +12,7 @@ import org.springframework.stereotype.Component;
 import javax.crypto.SecretKey;
 import java.nio.charset.StandardCharsets;
 import java.util.Date;
+import java.util.UUID;
 
 /**
  * JWT工具类
@@ -49,11 +50,25 @@ public class JwtUtil {
      * @return JWT Token字符串
      */
     public String generateToken(String username) {
+        // 为向后兼容保留：自动生成一个jti
+        String jti = UUID.randomUUID().toString();
+        return generateToken(username, jti);
+    }
+
+    /**
+     * 生成包含JTI的JWT Token
+     * 
+     * @param username 用户名
+     * @param jti JWT唯一标识
+     * @return JWT Token字符串
+     */
+    public String generateToken(String username, String jti) {
         Date now = new Date();
         Date expiryDate = new Date(now.getTime() + expiration * 1000L);
         
         return Jwts.builder()
                 .subject(username)           // 设置主题（用户名）
+                .id(jti)                    // 设置JWT唯一ID（JTI）
                 .issuedAt(now)              // 设置签发时间
                 .expiration(expiryDate)     // 设置过期时间
                 .signWith(getSigningKey())  // 使用密钥签名
@@ -69,6 +84,16 @@ public class JwtUtil {
     public String getUsernameFromToken(String token) {
         Claims claims = getClaimsFromToken(token);
         return claims.getSubject();
+    }
+
+    /**
+     * 从Token中获取JTI
+     * @param token JWT Token
+     * @return JTI
+     */
+    public String getJtiFromToken(String token) {
+        Claims claims = getClaimsFromToken(token);
+        return claims.getId();
     }
     
     /**

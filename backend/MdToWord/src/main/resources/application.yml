@@ -14,6 +14,18 @@ spring:
       max-file-size: 100MB
       max-request-size: 100MB
       enabled: true
+  data:
+    redis:
+      host: localhost
+      port: 6379
+      database: 0
+      timeout: 2000
+      lettuce:
+        pool:
+          max-active: 8
+          max-idle: 8
+          min-idle: 0
+          max-wait: 2000
 
 # 自定义文件上传配置
 file:
@@ -41,3 +53,10 @@ logging:
     com.example.mdtoword: debug
   pattern:
     console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Redis配置（用于单点登录）
+
+# SSO配置
+sso:
+  enabled: true
+  key-prefix: sso:token
