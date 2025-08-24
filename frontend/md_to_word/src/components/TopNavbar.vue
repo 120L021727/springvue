@@ -113,7 +113,7 @@ import {
   Search, 
   ArrowDown, 
   User, 
-  SwitchButton 
+  SwitchButton
 } from '@element-plus/icons-vue'
 import BrandTag from './BrandTag.vue'
 
@@ -146,10 +146,8 @@ const activeIndex = computed(() => {
   if (path === '/tools' || path === '/converter') return 'tools'
   if (path.startsWith('/blog')) return 'blog'
   if (path === '/about') return 'about'
-  return 'home'
+  return ''
 })
-
-
 
 // 处理菜单选择
 const handleMenuSelect = (index) => {
@@ -199,7 +197,6 @@ const handleUserCommand = (command) => {
         router.push('/profile')
       }
       break
-
   }
 }
 </script>
@@ -210,22 +207,34 @@ const handleUserCommand = (command) => {
   top: 0;
   left: 0;
   right: 0;
+  z-index: 100;
   height: 60px;
-  background: var(--navbar-bg, rgba(255, 255, 255, 0.95));
-  backdrop-filter: blur(15px);
-  border-bottom: var(--navbar-border, 1px solid rgba(0, 0, 0, 0.1));
-  z-index: 1000;
+  backdrop-filter: blur(10px);
   transition: all 0.3s ease;
 }
 
+.top-navbar.transparent {
+  background: rgba(0, 0, 0, 0.1);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  --user-text: rgba(255, 255, 255, 0.9);
+  --user-hover-bg: rgba(255, 255, 255, 0.1);
+}
+
+.top-navbar.solid {
+  background: rgba(255, 255, 255, 0.95);
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  --user-text: #333;
+  --user-hover-bg: rgba(0, 0, 0, 0.05);
+}
+
 .navbar-container {
-  max-width: 1400px;
-  margin: 0 auto;
-  height: 100%;
   display: flex;
   align-items: center;
   justify-content: space-between;
+  height: 100%;
   padding: 0 20px;
+  max-width: 1200px;
+  margin: 0 auto;
 }
 
 .brand-section {
@@ -236,82 +245,65 @@ const handleUserCommand = (command) => {
   flex: 1;
   display: flex;
   justify-content: center;
+  margin: 0 20px;
 }
 
 .nav-menu {
-  border: none;
-  background: transparent;
-  display: flex;
-  justify-content: center;
-  width: 100%;
+  border: none !important;
+  background: transparent !important;
 }
 
-.nav-menu :deep(.el-menu-item) {
+:deep(.el-menu--horizontal > .el-menu-item) {
   height: 60px;
   line-height: 60px;
-  border-bottom: none;
-  color: var(--menu-text-color, #333);
-  font-weight: 600;
-  transition: all 0.3s ease;
+  border-bottom: 2px solid transparent !important;
   margin: 0 10px;
-  display: flex;
-  align-items: center;
+  padding: 0 16px;
+  border-radius: 8px 8px 0 0;
+  transition: all 0.3s ease;
 }
 
-.nav-menu :deep(.el-menu-item:hover) {
-  background-color: var(--menu-hover-bg, rgba(25, 118, 210, 0.1));
-  color: var(--menu-hover-color, #1976d2);
+:deep(.el-menu--horizontal > .el-menu-item.is-active) {
+  border-bottom-color: currentColor !important;
+  background: rgba(255, 255, 255, 0.1);
 }
 
-.nav-menu :deep(.el-menu-item.is-active) {
-  background-color: var(--menu-active-bg, rgba(25, 118, 210, 0.15));
-  color: var(--menu-active-color, #1976d2);
-  border-bottom: var(--menu-active-border, 2px solid #1976d2);
-}
-
-.nav-menu :deep(.el-menu-item .el-icon) {
-  margin-right: 5px;
-}
-
-.nav-menu :deep(.el-menu-item span) {
-  display: inline-block;
+:deep(.el-menu--horizontal > .el-menu-item:hover) {
+  background: rgba(255, 255, 255, 0.05);
 }
 
 .search-section {
   flex-shrink: 0;
-  margin: 0 20px;
+  margin-right: 20px;
 }
 
 .search-input {
   width: 200px;
 }
 
-.search-input :deep(.el-input__wrapper) {
-  background: var(--search-bg, rgba(0, 0, 0, 0.05));
-  border: 1px solid var(--search-border, rgba(0, 0, 0, 0.1));
+:deep(.search-input .el-input__wrapper) {
+  background: rgba(255, 255, 255, 0.1);
+  border: 1px solid rgba(255, 255, 255, 0.2);
   border-radius: 20px;
   transition: all 0.3s ease;
 }
 
-.search-input :deep(.el-input__wrapper:hover) {
-  border-color: var(--search-hover-border, #1976d2);
+:deep(.search-input .el-input__wrapper:hover) {
+  background: rgba(255, 255, 255, 0.15);
+  border-color: rgba(255, 255, 255, 0.3);
 }
 
-.search-input :deep(.el-input__wrapper.is-focus) {
-  border-color: var(--search-focus-border, #1976d2);
-  box-shadow: 0 0 0 2px var(--search-focus-shadow, rgba(25, 118, 210, 0.2));
+:deep(.search-input .el-input__wrapper.is-focus) {
+  background: rgba(255, 255, 255, 0.2);
+  border-color: rgba(255, 255, 255, 0.5);
 }
 
-.search-input :deep(.el-input__inner) {
-  color: var(--search-text, #333);
+:deep(.search-input .el-input__inner) {
+  color: rgba(255, 255, 255, 0.9);
 }
 
-.search-input :deep(.el-input__inner::placeholder) {
-  color: var(--search-placeholder, rgba(0, 0, 0, 0.6));
-}
-
-.search-input :deep(.el-input__prefix) {
-  color: var(--search-prefix, rgba(0, 0, 0, 0.8));
+:deep(.search-input .el-input__inner::placeholder) {
+  color: rgba(255, 255, 255, 0.6);
 }
 
 .user-section {
@@ -369,4 +361,4 @@ const handleUserCommand = (command) => {
 :deep(.el-dropdown-menu__item.is-disabled:hover) {
   background-color: transparent;
 }
-</style> 
+</style>

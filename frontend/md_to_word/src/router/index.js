@@ -12,7 +12,7 @@ import Tools from '@/views/Tools.vue'
 import Blog from '@/views/Blog.vue'
 import BlogDetail from '@/views/BlogDetail.vue'
 import BlogEdit from '@/views/BlogEdit.vue'
-
+import Chat from '@/views/Chat.vue'
 import About from '@/views/About.vue'
 import Converter from '@/views/Converter.vue'
 import Profile from '@/views/Profile.vue'
@@ -25,6 +25,7 @@ const routes = [
   { path: '/', name: 'Home', component: Home },                                    // 首页
   { path: '/login', name: 'Login', component: Login },                            // 登录页
   { path: '/tools', name: 'Tools', component: Tools, meta: { requiresAuth: true } }, // 工具页（需要认证）
+  { path: '/chat', name: 'Chat', component: Chat, meta: { requiresAuth: true } }, // 聊天室（需要认证）
   { path: '/blog', name: 'Blog', component: Blog, meta: { requiresAuth: true } }, // 博客页（需要认证）
   { path: '/blog/:id', name: 'BlogDetail', component: BlogDetail },               // 博客详情页（公开）
   { path: '/blog/create', name: 'BlogCreate', component: BlogEdit, meta: { requiresAuth: true } }, // 创建博客（需要认证）

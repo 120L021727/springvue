@@ -79,6 +79,9 @@ public class SecurityConfig {
                 .requestMatchers("/api/file/avatar/**").permitAll()
                 .requestMatchers("/api/file/rte/**").permitAll()
                 
+                // WebSocket连接端点允许访问（JWT认证在连接时处理）
+                .requestMatchers("/ws/chat/**").permitAll()
+                
                 // 其他所有请求都需要JWT认证
                 .anyRequest().authenticated()
             )

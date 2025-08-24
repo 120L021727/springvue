@@ -18,6 +18,23 @@
             <p class="tool-desc">轻松将Markdown格式转换为Word文档，保持格式完整</p>
           </el-card>
           
+          <el-card 
+            class="tool-card chat-card" 
+            shadow="hover"
+            @click="router.push('/chat')"
+          >
+            <div class="tool-icon">
+              <el-icon :size="40"><ChatDotRound /></el-icon>
+              <el-badge 
+                v-if="chatUnreadCount > 0" 
+                :value="chatUnreadCount > 99 ? '99+' : chatUnreadCount" 
+                class="tool-badge"
+              />
+            </div>
+            <h2 class="tool-title">在线聊天室</h2>
+            <p class="tool-desc">与其他在线用户实时聊天，支持公共聊天和私人对话</p>
+          </el-card>
+          
           <!-- 可以在这里添加更多工具卡片 -->
           <el-card 
             class="tool-card coming-soon" 
@@ -62,12 +79,14 @@
 
 <script setup>
 import { useRouter } from 'vue-router'
-import { Document, Picture, Link, Calendar } from '@element-plus/icons-vue'
+import { Document, Picture, Link, Calendar, ChatDotRound } from '@element-plus/icons-vue'
 import LayoutBase from '@/components/LayoutBase.vue'
 import { useAuth } from '@/composables/useAuth'
+import { useChat } from '@/composables/useChat'
 
 const router = useRouter()
 const { getUsername } = useAuth()
+const { unreadCount: chatUnreadCount } = useChat()
 </script>
 
 <style scoped>
@@ -142,6 +161,22 @@ const { getUsername } = useAuth()
 .tool-icon {
   color: #1976d2;
   margin-bottom: 15px;
+  position: relative;
+}
+
+.tool-badge {
+  position: absolute;
+  top: -8px;
+  right: -8px;
+  transform: scale(0.8);
+}
+
+:deep(.tool-badge .el-badge__content) {
+  height: 18px;
+  line-height: 18px;
+  font-size: 11px;
+  min-width: 18px;
+  padding: 0 5px;
 }
 
 .tool-title {

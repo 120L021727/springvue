@@ -15,6 +15,9 @@ export default defineConfig({
       '@': fileURLToPath(new URL('./src', import.meta.url))
     },
   },
+  define: {
+    global: 'globalThis',
+  },
   server: {
     proxy: {
       '/api': {
@@ -22,6 +25,11 @@ export default defineConfig({
         changeOrigin: true,
         // 如果后端没有 /api 前缀，可以加上 rewrite
         // rewrite: (path) => path.replace(/^\/api/, '')
+      },
+      '/ws': {
+        target: 'http://localhost:8080',
+        changeOrigin: true,
+        ws: true, // 启用WebSocket代理
       }
     }
   }
